@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("/assets/fonts/PlusJakartaSans.woff2") format("woff2");
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --radius: 0.75rem;
+
+    /* Health Door palette — converted to OKLCH L C H */
+    /* Primary blue #1E6FAE */
+    --primary: 0.48 0.12 240;
+    --primary-foreground: 1 0 0;
+
+    /* Ice-blue background #EFF7FC */
+    --background: 0.971 0.018 222;
+    --foreground: 0.15 0.022 266;
+
+    /* White card */
+    --card: 1 0 0;
+    --card-foreground: 0.15 0.022 266;
+
+    --popover: 1 0 0;
+    --popover-foreground: 0.15 0.022 266;
+
+    /* Secondary: light blue tint */
+    --secondary: 0.93 0.03 222;
+    --secondary-foreground: 0.48 0.12 240;
+
+    /* Muted: slate gray #475569 */
+    --muted: 0.94 0.015 220;
+    --muted-foreground: 0.46 0.025 260;
+
+    /* Accent */
+    --accent: 0.93 0.04 220;
+    --accent-foreground: 0.48 0.12 240;
+
+    /* Destructive */
+    --destructive: 0.577 0.245 27.325;
+    --destructive-foreground: 1 0 0;
+
+    /* Success */
+    --success: 0.56 0.17 148;
+    --success-foreground: 1 0 0;
+
+    /* Warning */
+    --warning: 0.72 0.18 55;
+    --warning-foreground: 0.15 0.022 266;
+
+    --border: 0.88 0.025 222;
+    --input: 0.88 0.025 222;
+    --ring: 0.48 0.12 240;
+
+    --chart-1: 0.48 0.12 240;
+    --chart-2: 0.56 0.17 148;
+    --chart-3: 0.72 0.18 55;
+    --chart-4: 0.577 0.245 27.325;
+    --chart-5: 0.64 0.14 200;
+
+    --sidebar: 1 0 0;
+    --sidebar-foreground: 0.15 0.022 266;
+    --sidebar-primary: 0.48 0.12 240;
+    --sidebar-primary-foreground: 1 0 0;
+    --sidebar-accent: 0.93 0.03 222;
+    --sidebar-accent-foreground: 0.48 0.12 240;
+    --sidebar-border: 0.88 0.025 222;
+    --sidebar-ring: 0.48 0.12 240;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer utilities {
+  .text-success {
+    color: oklch(var(--success));
+  }
+  .bg-success {
+    background-color: oklch(var(--success));
+  }
+  .text-success-foreground {
+    color: oklch(var(--success-foreground));
+  }
+  .bg-success\/10 {
+    background-color: oklch(var(--success) / 0.1);
+  }
+  .text-warning {
+    color: oklch(var(--warning));
+  }
+  .bg-warning\/10 {
+    background-color: oklch(var(--warning) / 0.1);
+  }
+}
