@@ -38,6 +38,7 @@ interface ScanResult {
   manufacturing_date: string;
   expiry_date: string;
   error?: string;
+  rawOcrText?: string;
 }
 
 interface HistoryItem {
@@ -467,7 +468,7 @@ function extractMedicineData(
   const text = normalizeOcrText(combinedText).replace(/[|]/g, "I");
   const primaryNorm = normalizeOcrText(primaryText).replace(/[|]/g, "I");
 
-  const lines = primaryNorm
+  const _lines = primaryNorm
     .split("\n")
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
@@ -619,64 +620,102 @@ function extractMedicineData(
   // Use first 15 lines of combinedText (brand names appear near the top of the strip)
   let medicine_name = "Not detected";
   const skipPrefixes =
-    /^(MFG|MFD|EXP|BATCH|LOT|B\.NO|B\.N|B NO|MRP|NET|WT|TAB|CAP|INJ|SYRUP|CONTAINS|EACH|STORE|KEEP|DESCRIPTION|MANUFACTURED|MARKETED|FOR|USE|DO\s+NOT|WWW|HTTP|©|CIN|DRUG|REG|LIC|DL|COMPOSITION|INGREDIENTS|DOSAGE|WARNING|CAUTION|SCHEDULE|STRIP|MFGDT|MFDT|DOM|DATE|ADDRESS|DIST|PIN|INDIA|GITS|TABLET|CAPSULE|\d)/i;
+    /^(MFG|MFD|EXP|BATCH|LOT|B\.NO|B\.N|B NO|MRP|NET|WT|TAB|CAP|INJ|SYRUP|CONTAINS|EACH|STORE|KEEP|DESCRIPTION|MANUFACTURED|MARKETED|FOR|USE|DO\s+NOT|WWW|HTTP|©|CIN|DRUG|REG|LIC|DL|COMPOSITION|INGREDIENTS|DOSAGE|WARNING|CAUTION|SCHEDULE|STRIP|MFGDT|MFDT|\d)/i;
   // Relaxed skipIfContains: removed tablet/capsule/injection/syrup so names like "CROCIN TABLETS" are kept
   const skipIfContains =
     /(\d{2}[\/\-]\d{2,4}|www\.|\..com|batch|lot no|b\.no|\brs\b|\bmrp\b|phone|mob|tel:|fax|pvt\.?\s*ltd|pvt ltd|private limited|pharmaceuticals|laboratories|lab\.|pharma ltd|healthcare ltd|industries|village|taluka|nagar|road|street|plot|survey|gujarat|maharashtra|rajasthan|karnataka|hyderabad|mumbai|chennai|delhi|kolkata|bengaluru|ahmedabad|pune|pin code|\bpin\b|hydrochloride|hydrochlorid|sulphate|sulfate|phosphate|maleate|tartrate|citrate|acetate|gluconate|chloride|bromide|mesylate|fumarate|succinate|sodium|potassium|calcium|magnesium|\bsolution\b|\bsuspension\b|\bgel\b|\bcream\b|\bointment\b|\bpowder\b|\%)/i;
 
-  // Search first 15 lines of combinedText for brand name
-  const topLines = combinedText
+  // Search first 20 lines of primaryNorm for brand name using scoring
+  const topLines = primaryNorm
     .split("\n")
     .map((l) => l.trim())
     .filter((l) => l.length > 0)
-    .slice(0, 15);
+    .slice(0, 20);
 
-  // First pass: all-caps brand name lines from top of strip
-  for (const line of topLines) {
-    if (line.length < 4 || line.length > 50) continue;
-    if (skipPrefixes.test(line)) continue;
-    if (skipIfContains.test(line)) continue;
-    const isAllCaps = /^[A-Z][A-Z0-9®™\s\-\+\(\)\.]{2,39}$/.test(line);
-    if (isAllCaps) {
-      medicine_name = line;
-      break;
-    }
+  // Also gather from combined (all unique non-empty lines)
+  const allCandidateLines = Array.from(
+    new Set(
+      combinedText
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0),
+    ),
+  );
+
+  interface ScoredLine {
+    line: string;
+    score: number;
   }
 
-  // Second pass: mixed-case brand names from top lines
-  if (medicine_name === "Not detected") {
-    for (const line of topLines) {
-      if (line.length < 4 || line.length > 60) continue;
-      if (skipPrefixes.test(line)) continue;
-      if (skipIfContains.test(line)) continue;
-      const isBrandName =
-        /^[A-Za-z][A-Za-z0-9®™\s\-\+\.\/\(\)]+$/.test(line) &&
-        line.length >= 4 &&
-        line.length <= 60 &&
-        /[A-Za-z]{3,}/.test(line);
-      if (isBrandName) {
-        medicine_name = line;
-        break;
-      }
-    }
+  function scoreLine(
+    line: string,
+    positionIndex: number,
+    _totalLines: number,
+  ): ScoredLine | null {
+    if (line.length < 3 || line.length > 60) return null;
+    if (skipPrefixes.test(line)) return null;
+    if (skipIfContains.test(line)) return null;
+    // Must have at least 3 consecutive alpha chars
+    if (!/[A-Za-z]{3,}/.test(line)) return null;
+    // Skip purely numeric lines
+    if (/^[\d\s\.\/\-\(\)]+$/.test(line)) return null;
+    // Skip lines with only long words (likely chemical names like Hydrochloride)
+    const words = line.split(/\s+/).filter(Boolean);
+    if (words.length <= 3 && words.every((w) => w.length > 12)) return null;
+    // Must contain at least one letter
+    if (!/[A-Za-z]/.test(line)) return null;
+
+    let score = 0;
+    // Position score: higher for top lines
+    score += Math.max(0, 20 - positionIndex * 2);
+    // All-caps brand name bonus
+    if (/^[A-Z][A-Z0-9®™\s\-\+\(\)\.]{2,39}$/.test(line)) score += 30;
+    // Ideal brand name length 4-25 chars
+    if (line.length >= 4 && line.length <= 25) score += 20;
+    else if (line.length <= 40) score += 10;
+    // Short word count (1-3 words) preferred for brand names
+    if (words.length >= 1 && words.length <= 3) score += 15;
+    // No digits in line
+    if (!/\d/.test(line)) score += 10;
+    // Starts with uppercase
+    if (/^[A-Z]/.test(line)) score += 5;
+    // Mixed case title-style (like "Crocin")
+    if (/^[A-Z][a-z]/.test(line)) score += 8;
+
+    return { line, score };
   }
 
-  // Third pass: fall back to all lines (all-caps first)
+  // Score top lines (primary scan order)
+  const scoredTop: ScoredLine[] = [];
+  for (let i = 0; i < topLines.length; i++) {
+    const scored = scoreLine(topLines[i], i, topLines.length);
+    if (scored) scoredTop.push(scored);
+  }
+
+  if (scoredTop.length > 0) {
+    scoredTop.sort((a, b) => b.score - a.score);
+    medicine_name = scoredTop[0].line;
+  }
+
+  // If still not found, try all candidate lines with position = 10 (no top bonus)
   if (medicine_name === "Not detected") {
-    for (const line of lines) {
-      if (line.length < 4 || line.length > 50) continue;
-      if (skipPrefixes.test(line)) continue;
-      if (skipIfContains.test(line)) continue;
-      const isAllCaps = /^[A-Z][A-Z0-9®™\s\-\+\(\)\.]{2,39}$/.test(line);
-      if (isAllCaps) {
-        medicine_name = line;
-        break;
-      }
+    const scoredAll: ScoredLine[] = [];
+    for (let i = 0; i < allCandidateLines.length; i++) {
+      const scored = scoreLine(
+        allCandidateLines[i],
+        10,
+        allCandidateLines.length,
+      );
+      if (scored) scoredAll.push(scored);
+    }
+    if (scoredAll.length > 0) {
+      scoredAll.sort((a, b) => b.score - a.score);
+      medicine_name = scoredAll[0].line;
     }
   }
 
   // Length floor: discard noise
-  if (medicine_name.length < 4) medicine_name = "Not detected";
+  if (medicine_name.length < 3) medicine_name = "Not detected";
 
   console.log("[HealthDoor] Extracted:", {
     medicine_name,
@@ -684,7 +723,12 @@ function extractMedicineData(
     expiry_date,
   });
 
-  return { medicine_name, manufacturing_date, expiry_date };
+  return {
+    medicine_name,
+    manufacturing_date,
+    expiry_date,
+    rawOcrText: combinedText,
+  };
 }
 
 function getExpiryStatus(expiryDate: string): "valid" | "expired" | "unknown" {
@@ -803,6 +847,7 @@ function ResultCard({
   autoSpeak?: boolean;
   voiceLang?: string;
 }) {
+  const [showRaw, setShowRaw] = useState(false);
   const status = getExpiryStatus(result.expiry_date);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const hasSpeechSupport =
@@ -924,6 +969,23 @@ function ResultCard({
           </p>
         </div>
       </div>
+      {result.rawOcrText && (
+        <div className="mt-4 border-t border-border pt-3">
+          <button
+            type="button"
+            onClick={() => setShowRaw((v) => !v)}
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+          >
+            <Eye className="w-3 h-3" />
+            {showRaw ? "Hide raw OCR text" : "Show raw OCR text"}
+          </button>
+          {showRaw && (
+            <pre className="mt-2 text-xs font-mono bg-muted/50 rounded-lg p-3 max-h-48 overflow-y-auto whitespace-pre-wrap break-words text-muted-foreground">
+              {result.rawOcrText}
+            </pre>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -1184,8 +1246,16 @@ export default function App() {
 
       worker = await Tesseract.createWorker("eng");
 
+      // Configure for LSTM engine (better accuracy on printed text)
+      await worker.setParameters({
+        tessedit_ocr_engine_mode: 1, // LSTM only
+        // Allow all printable chars that appear on medicine strips
+        tessedit_char_whitelist:
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789./-:()%+ ",
+      });
+
       // Run PSM modes on sharpCanvas (no binarization — better for foil/light backgrounds)
-      const sharpPsmModes = [3, 6, 11];
+      const sharpPsmModes = [3, 6, 11, 4];
       // Run PSM modes on binCanvas (binarized — better for clean printed text)
       const binPsmModes = [3, 6];
 
