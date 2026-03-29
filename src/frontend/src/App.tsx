@@ -20,6 +20,7 @@ import {
   MicOff,
   Pill,
   RotateCcw,
+  Share2,
   ShieldAlert,
   ShieldCheck,
   Upload,
@@ -2119,6 +2120,30 @@ export default function App() {
           {/* Right actions */}
           <div className="flex items-center gap-2">
             <LanguageSelector value={voiceLang} onChange={setVoiceLang} />
+            <button
+              type="button"
+              data-ocid="share.button"
+              onClick={async () => {
+                const shareData = {
+                  title: "Health Door",
+                  text: "Scan medicine strips to get details - Medicine Name, Expiry Date, Usage info and more!",
+                  url: window.location.href,
+                };
+                if (navigator.share) {
+                  try {
+                    await navigator.share(shareData);
+                  } catch (_) {}
+                } else {
+                  await navigator.clipboard.writeText(window.location.href);
+                  toast.success("Link copied!");
+                }
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-yellow-400 hover:bg-yellow-400/10 transition-colors text-sm font-medium"
+              title="Share app"
+            >
+              <Share2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Share</span>
+            </button>
             <AuthButton />
           </div>
         </div>
