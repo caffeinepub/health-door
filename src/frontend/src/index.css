@@ -3,6 +3,13 @@
 @tailwind utilities;
 
 @font-face {
+  font-family: "Playfair Display";
+  src: url("/assets/fonts/PlayfairDisplay.woff2") format("woff2");
+  font-weight: 400 800;
+  font-display: swap;
+}
+
+@font-face {
   font-family: "Plus Jakarta Sans";
   src: url("/assets/fonts/PlusJakartaSans.woff2") format("woff2");
   font-weight: 300 700;
@@ -13,64 +20,66 @@
   :root {
     --radius: 0.75rem;
 
-    /* Health Door palette — converted to OKLCH L C H */
-    /* Primary blue #1E6FAE */
-    --primary: 0.48 0.12 240;
-    --primary-foreground: 1 0 0;
+    /* ── Health Door — Black & Gold Premium Theme ── */
 
-    /* Ice-blue background #EFF7FC */
-    --background: 0.971 0.018 222;
-    --foreground: 0.15 0.022 266;
+    /* Background: pure black */
+    --background: 0 0 0;
+    --foreground: 0.85 0.12 85;
 
-    /* White card */
-    --card: 1 0 0;
-    --card-foreground: 0.15 0.022 266;
+    /* Card: deep charcoal */
+    --card: 0.1 0 0;
+    --card-foreground: 0.85 0.12 85;
 
-    --popover: 1 0 0;
-    --popover-foreground: 0.15 0.022 266;
+    --popover: 0.08 0 0;
+    --popover-foreground: 0.85 0.12 85;
 
-    /* Secondary: light blue tint */
-    --secondary: 0.93 0.03 222;
-    --secondary-foreground: 0.48 0.12 240;
+    /* Primary: bright gold */
+    --primary: 0.78 0.18 85;
+    --primary-foreground: 0.05 0 0;
 
-    /* Muted: slate gray #475569 */
-    --muted: 0.94 0.015 220;
-    --muted-foreground: 0.46 0.025 260;
+    /* Secondary: dark gold tint */
+    --secondary: 0.18 0.04 85;
+    --secondary-foreground: 0.85 0.12 85;
 
-    /* Accent */
-    --accent: 0.93 0.04 220;
-    --accent-foreground: 0.48 0.12 240;
+    /* Muted: dark warm gray */
+    --muted: 0.15 0.02 85;
+    --muted-foreground: 0.6 0.08 85;
 
-    /* Destructive */
+    /* Accent: warm amber gold */
+    --accent: 0.22 0.05 85;
+    --accent-foreground: 0.85 0.12 85;
+
+    /* Destructive: deep red */
     --destructive: 0.577 0.245 27.325;
-    --destructive-foreground: 1 0 0;
+    --destructive-foreground: 0.98 0 0;
 
-    /* Success */
-    --success: 0.56 0.17 148;
-    --success-foreground: 1 0 0;
+    /* Success: muted gold-green */
+    --success: 0.62 0.15 130;
+    --success-foreground: 0.05 0 0;
 
-    /* Warning */
-    --warning: 0.72 0.18 55;
-    --warning-foreground: 0.15 0.022 266;
+    /* Warning: amber */
+    --warning: 0.75 0.18 60;
+    --warning-foreground: 0.05 0 0;
 
-    --border: 0.88 0.025 222;
-    --input: 0.88 0.025 222;
-    --ring: 0.48 0.12 240;
+    /* Borders: subtle gold */
+    --border: 0.28 0.06 85;
+    --input: 0.2 0.04 85;
+    --ring: 0.78 0.18 85;
 
-    --chart-1: 0.48 0.12 240;
-    --chart-2: 0.56 0.17 148;
-    --chart-3: 0.72 0.18 55;
+    --chart-1: 0.78 0.18 85;
+    --chart-2: 0.62 0.15 130;
+    --chart-3: 0.75 0.18 60;
     --chart-4: 0.577 0.245 27.325;
     --chart-5: 0.64 0.14 200;
 
-    --sidebar: 1 0 0;
-    --sidebar-foreground: 0.15 0.022 266;
-    --sidebar-primary: 0.48 0.12 240;
-    --sidebar-primary-foreground: 1 0 0;
-    --sidebar-accent: 0.93 0.03 222;
-    --sidebar-accent-foreground: 0.48 0.12 240;
-    --sidebar-border: 0.88 0.025 222;
-    --sidebar-ring: 0.48 0.12 240;
+    --sidebar: 0.08 0 0;
+    --sidebar-foreground: 0.85 0.12 85;
+    --sidebar-primary: 0.78 0.18 85;
+    --sidebar-primary-foreground: 0.05 0 0;
+    --sidebar-accent: 0.22 0.05 85;
+    --sidebar-accent-foreground: 0.85 0.12 85;
+    --sidebar-border: 0.28 0.06 85;
+    --sidebar-ring: 0.78 0.18 85;
   }
 
   * {
@@ -81,6 +90,12 @@
     @apply bg-background text-foreground;
     font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: "Playfair Display", Georgia, serif;
   }
 }
 
@@ -102,5 +117,9 @@
   }
   .bg-warning\/10 {
     background-color: oklch(var(--warning) / 0.1);
+  }
+  .shadow-card {
+    box-shadow: 0 0 0 1px oklch(var(--border)), 0 4px 24px
+      oklch(var(--primary) / 0.08);
   }
 }

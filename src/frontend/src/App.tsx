@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
   AlertCircle,
+  BookOpen,
   CalendarDays,
   Camera,
   CheckCircle2,
@@ -16,6 +17,7 @@ import {
   Mic,
   MicOff,
   Pill,
+  RotateCcw,
   ShieldCheck,
   Upload,
   User,
@@ -36,6 +38,7 @@ interface ScanResult {
   expiry_date: string;
   error?: string;
   rawOcrText?: string;
+  how_to_use?: string;
 }
 
 interface HistoryItem {
@@ -387,6 +390,9 @@ function extractMedicineData(
   // --- Expiry date ---
   let expiry_date = "Not detected";
   const expPatterns = [
+    /EXP\.?\s*(?:DATE\s*)?:?\s*(\d{2})\s*[\/\-\.]\s*(\d{4})/i,
+    /(?:EXPIRY|EXPN)\s*(?:DATE)?\s*:?\s*(\d{2})\s*[\/\-\.]\s*(\d{4})/i,
+    /USE\s*(?:BEFORE|BY)\s*:?\s*(\d{2})\s*[\/\-\.]\s*(\d{4})/i,
     // Indian medicine common format: MM-YYYY or MM/YYYY after EXP label
     /EXP\.?\s*:?\s*(\d{2}[\/\-]\d{4})/i,
     // "Exp Date" followed by month name
@@ -418,6 +424,9 @@ function extractMedicineData(
   // --- Manufacturing date ---
   let manufacturing_date = "Not detected";
   const mfgPatterns = [
+    /MFG\.?\s*(?:DATE\s*)?:?\s*(\d{2})\s*[\/\-\.]\s*(\d{4})/i,
+    /MFD\.?\s*(?:DATE\s*)?:?\s*(\d{2})\s*[\/\-\.]\s*(\d{4})/i,
+    /(?:MANUFACTURED\s+ON|DATE\s+OF\s+MFG)\s*:?\s*(\d{2})\s*[\/\-\.]\s*(\d{4})/i,
     /MFG\.?\s*:?\s*(\d{2}[\/\-]\d{4})/i,
     /MFG(?:\s+DATE)?\s*:?\s*([A-Za-z]{3,9}\.?\s*\d{4})/i,
     // DD/MM/YYYY style
@@ -699,6 +708,97 @@ function saveHistory(items: HistoryItem[]) {
   );
 }
 
+async function compressImage(file: File, maxSizeKB = 900): Promise<Blob> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement("canvas");
+      let { width, height } = img;
+      const maxDim = 1800;
+      if (width > maxDim || height > maxDim) {
+        const ratio = Math.min(maxDim / width, maxDim / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, width, height);
+      let quality = 0.9;
+      const tryCompress = () => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve(file);
+              return;
+            }
+            if (blob.size <= maxSizeKB * 1024 || quality <= 0.3) {
+              resolve(blob);
+            } else {
+              quality -= 0.15;
+              tryCompress();
+            }
+          },
+          "image/jpeg",
+          quality,
+        );
+      };
+      tryCompress();
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+}
+
+async function preprocessImageForOCR(file: File): Promise<Blob> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      // Target width: 2000px max, at least 1200px for readability
+      const targetW = Math.min(2000, Math.max(1200, img.width));
+      const scale = targetW / img.width;
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // Convert to grayscale + boost contrast
+      const imageData = ctx.getImageData(0, 0, w, h);
+      const d = imageData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const gray = Math.round(
+          0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2],
+        );
+        // Boost contrast: stretch histogram
+        const contrasted = Math.min(
+          255,
+          Math.max(0, Math.round((gray - 128) * 1.4 + 128)),
+        );
+        d[i] = d[i + 1] = d[i + 2] = contrasted;
+      }
+      ctx.putImageData(imageData, 0, 0);
+
+      canvas.toBlob((blob) => resolve(blob || file), "image/jpeg", 0.92);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+}
+
 // ------- Voice helper (multi-language) -------
 function speakResult(
   result: ScanResult,
@@ -716,13 +816,40 @@ function speakResult(
   const mfg = formatDateDisplay(result.manufacturing_date) || tpl.unknown;
   const exp = formatDateDisplay(result.expiry_date) || tpl.unknown;
   const name = result.medicine_name || tpl.unknown;
-  const text = `${tpl.medicine}: ${name}. ${tpl.mfg}: ${mfg}. ${tpl.exp}: ${exp}. ${tpl.status}: ${statusText}.`;
+  const howToUseText = result.how_to_use
+    ? ` How to use: ${result.how_to_use}`
+    : "";
+  const text = `${tpl.medicine}: ${name}. ${tpl.mfg}: ${mfg}. ${tpl.exp}: ${exp}. ${tpl.status}: ${statusText}.${howToUseText}`;
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
   utterance.rate = 0.92;
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
   return utterance;
+}
+
+async function fetchHowToUse(medicineName: string): Promise<string> {
+  if (!medicineName || medicineName === "Not detected") return "";
+  try {
+    const encoded = encodeURIComponent(medicineName);
+    let url = `https://api.fda.gov/drug/label.json?search=openfda.brand_name:"${encoded}"&limit=1`;
+    let resp = await fetch(url);
+    if (!resp.ok) {
+      url = `https://api.fda.gov/drug/label.json?search=openfda.generic_name:"${encoded}"&limit=1`;
+      resp = await fetch(url);
+    }
+    if (!resp.ok) return "";
+    const data = await resp.json();
+    const result = data?.results?.[0];
+    if (!result) return "";
+    const dosage =
+      result.dosage_and_administration?.[0] ||
+      result.indications_and_usage?.[0] ||
+      "";
+    return dosage.slice(0, 500) + (dosage.length > 500 ? "..." : "");
+  } catch {
+    return "";
+  }
 }
 
 // ------- StatusBadge -------
@@ -880,6 +1007,19 @@ function ResultCard({
           </p>
         </div>
       </div>
+      {result.how_to_use && (
+        <div className="mt-4 border-t border-border pt-3">
+          <div className="flex items-center gap-1.5 mb-2">
+            <BookOpen className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              How to Use
+            </span>
+          </div>
+          <p className="text-sm text-foreground leading-relaxed">
+            {result.how_to_use}
+          </p>
+        </div>
+      )}
       {result.rawOcrText && (
         <div className="mt-4 border-t border-border pt-3">
           <button
@@ -1152,64 +1292,66 @@ export default function App() {
     setAutoSpeak(false);
 
     try {
-      // Build FormData for OCR.space API
-      const formData = new FormData();
-      formData.append("apikey", "helloworld");
-      formData.append("file", selectedFile);
-      formData.append("language", "eng");
-      formData.append("isOverlayRequired", "false");
-      formData.append("OCREngine", "2");
-      formData.append("scale", "true");
-      formData.append("isTable", "false");
+      // Preprocess image: grayscale + contrast boost, then compress
+      const preprocessed = await preprocessImageForOCR(selectedFile);
+      const compressedBlob = await compressImage(
+        new File([preprocessed], selectedFile.name, { type: "image/jpeg" }),
+      );
+      const compressedFile = new File([compressedBlob], selectedFile.name, {
+        type: "image/jpeg",
+      });
 
-      let response: Response;
-      try {
-        response = await fetch("https://api.ocr.space/parse/image", {
-          method: "POST",
-          body: formData,
-        });
-      } catch {
-        throw new Error(
-          "Could not connect to OCR service. Please check your internet connection and try again.",
-        );
+      // OCR pass helper
+      async function runOcr(engine: string): Promise<string> {
+        const fd = new FormData();
+        fd.append("apikey", "helloworld");
+        fd.append("file", compressedFile);
+        fd.append("language", "eng");
+        fd.append("isOverlayRequired", "false");
+        fd.append("OCREngine", engine);
+        fd.append("scale", "true");
+        fd.append("isTable", "false");
+        fd.append("detectOrientation", "true");
+        try {
+          const resp = await fetch("https://api.ocr.space/parse/image", {
+            method: "POST",
+            body: fd,
+          });
+          if (!resp.ok) return "";
+          const data = await resp.json();
+          if (data.IsErroredOnOcr || !data.ParsedResults?.length) return "";
+          return data.ParsedResults.map((r: any) => r.ParsedText || "").join(
+            "\n",
+          );
+        } catch {
+          return "";
+        }
       }
 
-      if (!response.ok) {
-        throw new Error(
-          "Could not connect to OCR service. Please check your internet connection and try again.",
-        );
-      }
+      // Run Engine 2 (better for printed text), then Engine 1 as fallback
+      const text2 = await runOcr("2");
+      const text1 = await runOcr("1");
+      console.log("[HealthDoor] OCR Engine2:", text2);
+      console.log("[HealthDoor] OCR Engine1:", text1);
 
-      const ocrData = await response.json();
-      console.log("[HealthDoor] OCR.space response:", ocrData);
+      const combinedOcr = [text2, text1].filter(Boolean).join("\n");
 
-      if (
-        ocrData.IsErroredOnOcr ||
-        !ocrData.ParsedResults ||
-        ocrData.ParsedResults.length === 0
-      ) {
+      if (!combinedOcr || combinedOcr.trim().length < 5) {
         throw new Error(
           "Could not read text from image. Please use a clearer, well-lit photo where the text on the strip is sharp.",
         );
       }
 
-      const parsedText: string = ocrData.ParsedResults[0].ParsedText || "";
-      console.log("[HealthDoor] OCR text:", parsedText);
-
-      if (!parsedText || parsedText.trim().length < 5) {
-        throw new Error(
-          "Could not read text from image. Please use a clearer, well-lit photo where the text on the strip is sharp.",
-        );
-      }
-
-      const res = extractMedicineData(parsedText, parsedText);
-      setResult(res);
+      const res = extractMedicineData(combinedOcr, combinedOcr);
+      const howToUse = await fetchHowToUse(res.medicine_name);
+      const resWithUsage: ScanResult = { ...res, how_to_use: howToUse };
+      setResult(resWithUsage);
       setAutoSpeak(true);
 
       const item: HistoryItem = {
         id: crypto.randomUUID(),
         timestamp: Date.now(),
-        result: res,
+        result: resWithUsage,
         imageUrl: previewUrl!,
       };
       const newHistory = [item, ...history].slice(0, MAX_HISTORY);
@@ -1695,6 +1837,32 @@ export default function App() {
                   autoSpeak={autoSpeak}
                   voiceLang={voiceLang}
                 />
+                <div className="mt-8 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 p-6 flex flex-col items-center gap-3 text-center">
+                  <p className="text-base font-semibold text-foreground">
+                    Want to scan another medicine?
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Tap the button below to start a new scan
+                  </p>
+                  <Button
+                    data-ocid="scan.new_scan_button"
+                    onClick={() => {
+                      setResult(null);
+                      setSelectedFile(null);
+                      if (previewUrl) URL.revokeObjectURL(previewUrl);
+                      setPreviewUrl(null);
+                      setErrorMsg(null);
+                      uploadSectionRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                      });
+                    }}
+                    className="gap-2 px-8 mt-1"
+                    size="lg"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Scan Another Medicine
+                  </Button>
+                </div>
               </div>
             </motion.section>
           )}
