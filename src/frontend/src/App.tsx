@@ -2124,18 +2124,42 @@ export default function App() {
               type="button"
               data-ocid="share.button"
               onClick={async () => {
-                const shareData = {
-                  title: "Health Door",
-                  text: "Scan medicine strips to get details - Medicine Name, Expiry Date, Usage info and more!",
-                  url: window.location.href,
-                };
-                if (navigator.share) {
+                const appUrl = "https://2ilpw-6qaaa-aaaaj-qoswq-cai.icp0.io";
+                // Try native share sheet first (mobile browsers)
+                if (typeof navigator.share === "function") {
                   try {
-                    await navigator.share(shareData);
-                  } catch (_) {}
-                } else {
-                  await navigator.clipboard.writeText(window.location.href);
-                  toast.success("Link copied!");
+                    await navigator.share({
+                      title: "Health Door",
+                      text: "Scan medicine strips to get details - Medicine Name, Expiry Date, Usage info and more!",
+                      url: appUrl,
+                    });
+                    return;
+                  } catch (err: unknown) {
+                    // User cancelled — don't fall through
+                    if (err instanceof Error && err.name === "AbortError")
+                      return;
+                  }
+                }
+                // Clipboard API fallback
+                try {
+                  await navigator.clipboard.writeText(appUrl);
+                  toast.success("Link copied to clipboard!");
+                } catch (_) {
+                  // Legacy execCommand fallback
+                  try {
+                    const el = document.createElement("textarea");
+                    el.value = appUrl;
+                    el.style.cssText =
+                      "position:fixed;top:0;left:0;opacity:0;pointer-events:none;";
+                    document.body.appendChild(el);
+                    el.focus();
+                    el.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(el);
+                    toast.success("Link copied to clipboard!");
+                  } catch (_2) {
+                    toast.info(`Share this link: ${appUrl}`);
+                  }
                 }
               }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-yellow-400 hover:bg-yellow-400/10 transition-colors text-sm font-medium"
