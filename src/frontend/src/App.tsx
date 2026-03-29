@@ -243,6 +243,12 @@ function normalizeOcrText(raw: string): string {
   t = t.replace(/\b0CT\b/gi, "OCT");
   t = t.replace(/\b0EC\b/gi, "DEC");
   t = t.replace(/\b0AN\b/gi, "JAN");
+  // Fix common OCR misreads: MF6 -> MFG, EXP1RY -> EXPIRY
+  t = t.replace(/\bMF6\b/g, "MFG");
+  t = t.replace(/\bEXP1RY\b/gi, "EXPIRY");
+  // Fix O -> 0 in digit positions within dates (e.g. "O1/2O24" -> "01/2024")
+  t = t.replace(/\bO(\d)/g, "0$1");
+  t = t.replace(/(\d)O(\d)/g, "$10$2");
   // Fix lowercase L -> 1 in date digit positions (e.g. 0l/2024)
   t = t.replace(/(\d)l([\/\-\.])(\d)/g, "$11$2$3");
   t = t.replace(/([\/\-\.])(l)(\d)/g, "$11$3");
@@ -397,6 +403,12 @@ function extractMedicineData(
   // --- Expiry date ---
   let expiry_date = "Not detected";
   const expPatterns = [
+    // "EXP: JAN 2026"
+    /(?:EXP|EXPIRY)\.?\s*:?\s*([A-Za-z]{3}\.?\s*[\/\-]?\s*\d{4})/i,
+    // "USE BEFORE: JAN 2026"
+    /USE\s+BEFORE\.?\s*:?\s*([A-Za-z]{3}\.?\s*\d{4})/i,
+    // "BEST BEFORE: 01/2026"
+    /BEST\s+BEFORE\.?\s*:?\s*(\d{2}[\/\-\.]\d{4})/i,
     /EXP\.?\s*(?:DATE\s*)?:?\s*(\d{2})\s*[\/\-\.]\s*(\d{4})/i,
     /(?:EXPIRY|EXPN)\s*(?:DATE)?\s*:?\s*(\d{2})\s*[\/\-\.]\s*(\d{4})/i,
     /USE\s*(?:BEFORE|BY)\s*:?\s*(\d{2})\s*[\/\-\.]\s*(\d{4})/i,
@@ -431,6 +443,17 @@ function extractMedicineData(
   // --- Manufacturing date ---
   let manufacturing_date = "Not detected";
   const mfgPatterns = [
+    // Indian format: "MFG: JAN 2024" or "MFD: JAN/2024"
+    /(?:MFG|MFD)\.?\s*:?\s*([A-Za-z]{3}\.?\s*[\/\-]?\s*\d{4})/i,
+    // "MFG JAN24" or "MFG 01-24"
+    /(?:MFG|MFD)\.?\s*:?\s*(\d{2}[\/\-]\d{2})\b/i,
+    // standalone: "MFGDT" or "MFG.DT"
+    /MFG[\.]?\s*DT\.?\s*:?\s*(\d{2}[\/\-\.]\d{2,4})/i,
+    // "D.O.M" or "D.O.MFG" patterns common on Indian strips
+    /D\.?O\.?M\.?\s*:?\s*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/i,
+    /D\.?O\.?M\.?\s*:?\s*([A-Za-z]{3}\.?\s*\d{4})/i,
+    // "DATE OF MFG" with full date
+    /DATE\s+OF\s+(?:MFG|MANUFACTURE)\.?\s*:?\s*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4})/i,
     /MFG\.?\s*(?:DATE\s*)?:?\s*(\d{2})\s*[\/\-\.]\s*(\d{4})/i,
     /MFD\.?\s*(?:DATE\s*)?:?\s*(\d{2})\s*[\/\-\.]\s*(\d{4})/i,
     /(?:MANUFACTURED\s+ON|DATE\s+OF\s+MFG)\s*:?\s*(\d{2})\s*[\/\-\.]\s*(\d{4})/i,
@@ -785,19 +808,69 @@ async function preprocessImageForOCR(file: File): Promise<Blob> {
       const ctx = canvas.getContext("2d")!;
       ctx.drawImage(img, 0, 0, w, h);
 
-      // Convert to grayscale + boost contrast
+      // Step 1: Convert to grayscale
       const imageData = ctx.getImageData(0, 0, w, h);
       const d = imageData.data;
+      const gray = new Uint8ClampedArray(w * h);
       for (let i = 0; i < d.length; i += 4) {
-        const gray = Math.round(
+        gray[i / 4] = Math.round(
           0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2],
         );
-        // Boost contrast: stretch histogram
-        const contrasted = Math.min(
-          255,
-          Math.max(0, Math.round((gray - 128) * 1.4 + 128)),
-        );
-        d[i] = d[i + 1] = d[i + 2] = contrasted;
+      }
+
+      // Step 2: Sharpen using convolution kernel
+      const sharpened = new Uint8ClampedArray(w * h);
+      const kernel = [0, -1, 0, -1, 5, -1, 0, -1, 0];
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const idx = y * w + x;
+          if (x === 0 || x === w - 1 || y === 0 || y === h - 1) {
+            sharpened[idx] = gray[idx];
+            continue;
+          }
+          let val = 0;
+          for (let ky = -1; ky <= 1; ky++) {
+            for (let kx = -1; kx <= 1; kx++) {
+              val +=
+                kernel[(ky + 1) * 3 + (kx + 1)] * gray[(y + ky) * w + (x + kx)];
+            }
+          }
+          sharpened[idx] = Math.min(255, Math.max(0, val));
+        }
+      }
+
+      // Step 3: Otsu-like threshold for binarization
+      const hist = new Array(256).fill(0);
+      for (let i = 0; i < sharpened.length; i++) hist[sharpened[i]]++;
+      const total = sharpened.length;
+      let sumB = 0;
+      let wB = 0;
+      let wF = 0;
+      let maxVar = 0;
+      let threshold = 128;
+      let sum = 0;
+      for (let i = 0; i < 256; i++) sum += i * hist[i];
+      for (let t = 0; t < 256; t++) {
+        wB += hist[t];
+        if (wB === 0) continue;
+        wF = total - wB;
+        if (wF === 0) break;
+        sumB += t * hist[t];
+        const mB = sumB / wB;
+        const mF = (sum - sumB) / wF;
+        const varBetween = wB * wF * (mB - mF) * (mB - mF);
+        if (varBetween > maxVar) {
+          maxVar = varBetween;
+          threshold = t;
+        }
+      }
+
+      // Write binarized pixels back
+      for (let i = 0; i < sharpened.length; i++) {
+        const v = sharpened[i] > threshold ? 255 : 0;
+        const pi = i * 4;
+        d[pi] = d[pi + 1] = d[pi + 2] = v;
+        d[pi + 3] = 255;
       }
       ctx.putImageData(imageData, 0, 0);
 
@@ -1492,10 +1565,13 @@ export default function App() {
       });
 
       // OCR pass helper
-      async function runOcr(engine: string): Promise<string> {
+      async function runOcr(
+        engine: string,
+        fileToSend: File = compressedFile,
+      ): Promise<string> {
         const fd = new FormData();
         fd.append("apikey", "helloworld");
-        fd.append("file", compressedFile);
+        fd.append("file", fileToSend);
         fd.append("language", "eng");
         fd.append("isOverlayRequired", "false");
         fd.append("OCREngine", engine);
@@ -1518,13 +1594,26 @@ export default function App() {
         }
       }
 
-      // Run Engine 2 (better for printed text), then Engine 1 as fallback
-      const text2 = await runOcr("2");
-      const text1 = await runOcr("1");
-      console.log("[HealthDoor] OCR Engine2:", text2);
-      console.log("[HealthDoor] OCR Engine1:", text1);
+      // Compress original file too for Pass 3
+      const originalCompressed = new File(
+        [await compressImage(selectedFile)],
+        selectedFile.name,
+        { type: "image/jpeg" },
+      );
 
-      const combinedOcr = [text2, text1].filter(Boolean).join("\n");
+      // Pass 1: Engine 2 on binarized/sharpened image
+      // Pass 2: Engine 1 on binarized/sharpened image
+      // Pass 3: Engine 2 on original image (sometimes OCR works better on color)
+      const [text2, text1, textOrig] = await Promise.all([
+        runOcr("2"),
+        runOcr("1"),
+        runOcr("2", originalCompressed),
+      ]);
+      console.log("[HealthDoor] OCR Engine2 (binarized):", text2);
+      console.log("[HealthDoor] OCR Engine1 (binarized):", text1);
+      console.log("[HealthDoor] OCR Engine2 (original):", textOrig);
+
+      const combinedOcr = [text2, text1, textOrig].filter(Boolean).join("\n");
 
       if (!combinedOcr || combinedOcr.trim().length < 5) {
         throw new Error(
