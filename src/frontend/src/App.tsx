@@ -26,9 +26,6 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-// Tesseract.js loaded via CDN in index.html
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare const Tesseract: any;
 import { useActor } from "./hooks/useActor";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 
@@ -198,8 +195,6 @@ const LANGUAGES = [
 // ------- Constants -------
 const STORAGE_KEY_HISTORY = "health_door_history";
 const MAX_HISTORY = 5;
-const MAX_DIM = 3000;
-
 const MONTH_NAMES = [
   "January",
   "February",
@@ -314,146 +309,62 @@ function formatDateDisplay(dateStr: string): string {
 }
 
 // ------- Helpers -------
-async function preprocessImage(
-  file: File,
-): Promise<{ sharpCanvas: HTMLCanvasElement; binCanvas: HTMLCanvasElement }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const objUrl = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(objUrl);
+// ------- Helpers -------
+/** Parse a date string found in OCR text into a JS Date for comparison. */
+function parseDate(raw: string): Date | null {
+  if (!raw) return null;
+  const s = raw.trim();
 
-      let scale: number;
-      const maxSide = Math.max(img.width, img.height);
-      // Aggressively upscale small images for better OCR
-      if (maxSide < 1200) {
-        scale = Math.min(4, 2400 / maxSide);
-      } else {
-        scale = Math.min(1, MAX_DIM / maxSide);
-      }
-      const w = Math.round(img.width * scale);
-      const h = Math.round(img.height * scale);
-
-      const base = document.createElement("canvas");
-      base.width = w;
-      base.height = h;
-      const ctx = base.getContext("2d")!;
-      ctx.drawImage(img, 0, 0, w, h);
-
-      // Step 1: Grayscale
-      const imageData = ctx.getImageData(0, 0, w, h);
-      const d = imageData.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const gray = Math.round(
-          0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2],
-        );
-        d[i] = d[i + 1] = d[i + 2] = gray;
-      }
-      ctx.putImageData(imageData, 0, 0);
-
-      // Step 2: Sharpening via 3x3 convolution kernel
-      const src = ctx.getImageData(0, 0, w, h);
-      const dst = ctx.createImageData(w, h);
-      const kernel = [0, -1, 0, -1, 5, -1, 0, -1, 0];
-      const kSize = 3;
-      const half = Math.floor(kSize / 2);
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          let val = 0;
-          for (let ky = 0; ky < kSize; ky++) {
-            for (let kx = 0; kx < kSize; kx++) {
-              const sy = Math.min(h - 1, Math.max(0, y + ky - half));
-              const sx = Math.min(w - 1, Math.max(0, x + kx - half));
-              const idx = (sy * w + sx) * 4;
-              val += src.data[idx] * kernel[ky * kSize + kx];
-            }
-          }
-          const outIdx = (y * w + x) * 4;
-          const clamped = Math.min(255, Math.max(0, val));
-          dst.data[outIdx] =
-            dst.data[outIdx + 1] =
-            dst.data[outIdx + 2] =
-              clamped;
-          dst.data[outIdx + 3] = 255;
-        }
-      }
-
-      // sharpCanvas: grayscale + sharpened, no binarization (better for foil/varied backgrounds)
-      const sharpCanvas = document.createElement("canvas");
-      sharpCanvas.width = w;
-      sharpCanvas.height = h;
-      sharpCanvas.getContext("2d")!.putImageData(dst, 0, 0);
-
-      // binCanvas: adaptive binarization using Otsu-like mean threshold
-      const binCanvas = document.createElement("canvas");
-      binCanvas.width = w;
-      binCanvas.height = h;
-      const binCtx = binCanvas.getContext("2d")!;
-      const binData = binCtx.createImageData(w, h);
-      let pixSum = 0;
-      for (let i = 0; i < dst.data.length; i += 4) pixSum += dst.data[i];
-      const mean = pixSum / (w * h);
-      const threshold = mean * 0.85;
-      for (let i = 0; i < dst.data.length; i += 4) {
-        const v = dst.data[i] < threshold ? 0 : 255;
-        binData.data[i] = binData.data[i + 1] = binData.data[i + 2] = v;
-        binData.data[i + 3] = 255;
-      }
-      binCtx.putImageData(binData, 0, 0);
-
-      resolve({ sharpCanvas, binCanvas });
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(objUrl);
-      reject(new Error("Image load failed"));
-    };
-    img.src = objUrl;
-  });
-}
-
-/** Parse a date string into a Date for comparison. Returns null if unparseable. */
-function parseDate(dateStr: string): Date | null {
-  // DD/MM/YYYY
-  const ddMMYYYY = dateStr.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  // DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
+  const ddMMYYYY = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
   if (ddMMYYYY) {
-    const day = Number(ddMMYYYY[1]);
-    const month = Number(ddMMYYYY[2]) - 1;
-    const year = Number(ddMMYYYY[3]);
-    if (month >= 0 && month <= 11 && day >= 1 && day <= 31)
-      return new Date(year, month, day);
+    const d = new Date(
+      Number(ddMMYYYY[3]),
+      Number(ddMMYYYY[2]) - 1,
+      Number(ddMMYYYY[1]),
+    );
+    if (!Number.isNaN(d.getTime())) return d;
   }
 
   // MM/YYYY or MM-YYYY or MM.YYYY
-  const mmYYYY = dateStr.match(/^(\d{1,2})[\/\-\.](\d{4})$/);
-  if (mmYYYY) return new Date(Number(mmYYYY[2]), Number(mmYYYY[1]) - 1, 1);
-
-  // YYYY/MM or YYYY-MM
-  const yyyyMM = dateStr.match(/^(\d{4})[\/\-](\d{1,2})$/);
-  if (yyyyMM) return new Date(Number(yyyyMM[1]), Number(yyyyMM[2]) - 1, 1);
-
-  // MM/YY or MM-YY
-  const mmYY = dateStr.match(/^(\d{1,2})[\/\-](\d{2})$/);
-  if (mmYY) return new Date(2000 + Number(mmYY[2]), Number(mmYY[1]) - 1, 1);
-
-  // Full month name + year (JANUARY 2026)
-  const fullMon = dateStr.match(/^([A-Za-z]{4,9})\s+(\d{4})$/);
-  if (fullMon) {
-    const abbr = fullMon[1].toUpperCase().slice(0, 3);
-    const idx = MONTH_ABBR[abbr];
-    if (idx !== undefined) return new Date(Number(fullMon[2]), idx, 1);
+  const mmYYYY = s.match(/^(\d{1,2})[\/\-\.](\d{4})$/);
+  if (mmYYYY) {
+    const d = new Date(Number(mmYYYY[2]), Number(mmYYYY[1]) - 1, 1);
+    if (!Number.isNaN(d.getTime())) return d;
   }
 
-  // MON YYYY or MON-YYYY or MON/YYYY
-  const monYYYY = dateStr.match(/^([A-Za-z]{3})[\/\-\s](\d{4})$/);
+  // YYYY/MM or YYYY-MM
+  const yyyyMM = s.match(/^(\d{4})[\/\-](\d{1,2})$/);
+  if (yyyyMM) {
+    const d = new Date(Number(yyyyMM[1]), Number(yyyyMM[2]) - 1, 1);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+
+  // MM/YY or MM-YY
+  const mmYY = s.match(/^(\d{1,2})[\/\-](\d{2})$/);
+  if (mmYY) {
+    const d = new Date(2000 + Number(mmYY[2]), Number(mmYY[1]) - 1, 1);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+
+  // MON/YYYY or MON-YYYY or MON YYYY
+  const monYYYY = s.match(/^([A-Za-z]{3})[\/\-\s](\d{4})$/);
   if (monYYYY) {
     const d = new Date(`${monYYYY[1]} 1 ${monYYYY[2]}`);
     if (!Number.isNaN(d.getTime())) return d;
   }
 
-  // MON-YY or MON/YY
-  const monYY = dateStr.match(/^([A-Za-z]{3})[\/\-\s](\d{2})$/);
+  // MON/YY or MON-YY
+  const monYY = s.match(/^([A-Za-z]{3})[\/\-\s](\d{2})$/);
   if (monYY) {
     const d = new Date(`${monYY[1]} 1 20${monYY[2]}`);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+
+  // Full month name + YYYY
+  const fullMon = s.match(/^([A-Za-z]{4,9})\s+(\d{4})$/);
+  if (fullMon) {
+    const d = new Date(`${fullMon[1]} 1 ${fullMon[2]}`);
     if (!Number.isNaN(d.getTime())) return d;
   }
 
@@ -1240,64 +1151,58 @@ export default function App() {
     setResult(null);
     setAutoSpeak(false);
 
-    let worker: any = null;
     try {
-      const { sharpCanvas, binCanvas } = await preprocessImage(selectedFile);
+      // Build FormData for OCR.space API
+      const formData = new FormData();
+      formData.append("apikey", "helloworld");
+      formData.append("file", selectedFile);
+      formData.append("language", "eng");
+      formData.append("isOverlayRequired", "false");
+      formData.append("OCREngine", "2");
+      formData.append("scale", "true");
+      formData.append("isTable", "false");
 
-      worker = await Tesseract.createWorker("eng");
-
-      // Configure for LSTM engine (better accuracy on printed text)
-      await worker.setParameters({
-        tessedit_ocr_engine_mode: 1, // LSTM only
-        // Allow all printable chars that appear on medicine strips
-        tessedit_char_whitelist:
-          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789./-:()%+ ",
-      });
-
-      // Run PSM modes on sharpCanvas (no binarization — better for foil/light backgrounds)
-      const sharpPsmModes = [3, 6, 11, 4];
-      // Run PSM modes on binCanvas (binarized — better for clean printed text)
-      const binPsmModes = [3, 6];
-
-      const allTexts: string[] = [];
-      for (const psm of sharpPsmModes) {
-        await worker.setParameters({ tessedit_pageseg_mode: psm });
-        const res = await worker.recognize(sharpCanvas);
-        const t = (res.data.text || "").trim();
-        if (t) allTexts.push(t);
-      }
-      for (const psm of binPsmModes) {
-        await worker.setParameters({ tessedit_pageseg_mode: psm });
-        const res = await worker.recognize(binCanvas);
-        const t = (res.data.text || "").trim();
-        if (t) allTexts.push(t);
+      let response: Response;
+      try {
+        response = await fetch("https://api.ocr.space/parse/image", {
+          method: "POST",
+          body: formData,
+        });
+      } catch {
+        throw new Error(
+          "Could not connect to OCR service. Please check your internet connection and try again.",
+        );
       }
 
-      // Combine all unique lines from all PSM outputs
-      const lineSet = new Set<string>();
-      for (const t of allTexts) {
-        for (const line of t.split("\n")) {
-          const trimmed = line.trim();
-          if (trimmed) lineSet.add(trimmed);
-        }
+      if (!response.ok) {
+        throw new Error(
+          "Could not connect to OCR service. Please check your internet connection and try again.",
+        );
       }
-      // Also keep the longest single block for context-sensitive patterns
-      const longestText = allTexts.reduce(
-        (a, b) => (b.length > a.length ? b : a),
-        "",
-      );
-      const combinedText = `${longestText}
-${Array.from(lineSet).join("\n")}`;
 
-      console.log("[HealthDoor] OCR combined text:", combinedText);
+      const ocrData = await response.json();
+      console.log("[HealthDoor] OCR.space response:", ocrData);
 
-      if (!combinedText || combinedText.trim().length < 5) {
+      if (
+        ocrData.IsErroredOnOcr ||
+        !ocrData.ParsedResults ||
+        ocrData.ParsedResults.length === 0
+      ) {
         throw new Error(
           "Could not read text from image. Please use a clearer, well-lit photo where the text on the strip is sharp.",
         );
       }
 
-      const res = extractMedicineData(longestText, combinedText);
+      const parsedText: string = ocrData.ParsedResults[0].ParsedText || "";
+      console.log("[HealthDoor] OCR text:", parsedText);
+
+      if (!parsedText || parsedText.trim().length < 5) {
+        throw new Error(
+          "Could not read text from image. Please use a clearer, well-lit photo where the text on the strip is sharp.",
+        );
+      }
+
+      const res = extractMedicineData(parsedText, parsedText);
       setResult(res);
       setAutoSpeak(true);
 
@@ -1327,7 +1232,6 @@ ${Array.from(lineSet).join("\n")}`;
     } catch (err: any) {
       setErrorMsg(err?.message || "Something went wrong. Please try again.");
     } finally {
-      if (worker) await worker.terminate();
       setAnalyzing(false);
     }
   }, [selectedFile, actor, previewUrl, history, isLoggedIn]);
