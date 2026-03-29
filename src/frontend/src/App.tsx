@@ -63,6 +63,28 @@ interface LangTemplate {
   valid: string;
   expired: string;
   unknown: string;
+  mfgDate: string;
+  expDate: string;
+  usedFor: string;
+  howToUse: string;
+  drugClass: string;
+  sideEffects: string;
+  warnings: string;
+  notDetected: string;
+  showRawOcr: string;
+  hideRawOcr: string;
+  scanResults: string;
+  scanAnother: string;
+  uploadScan: string;
+  analyzeBtn: string;
+  readingStrip: string;
+  browseFile: string;
+  scanCamera: string;
+  listeningText: string;
+  voiceText: string;
+  recentScans: string;
+  wantScanAnother: string;
+  tapBelow: string;
 }
 
 // ------- Multi-language templates -------
@@ -75,6 +97,28 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     valid: "Valid",
     expired: "Expired",
     unknown: "Unknown",
+    mfgDate: "MFG Date",
+    expDate: "EXP Date",
+    usedFor: "Used For",
+    howToUse: "How to Use",
+    drugClass: "Drug Class",
+    sideEffects: "Side Effects",
+    warnings: "Warnings",
+    notDetected: "Not detected",
+    showRawOcr: "Show raw OCR text",
+    hideRawOcr: "Hide raw OCR text",
+    scanResults: "Scan Results",
+    scanAnother: "Scan Another Medicine",
+    uploadScan: "Upload & Scan Medicine",
+    analyzeBtn: "Analyze Medicine Strip",
+    readingStrip: "Reading medicine strip...",
+    browseFile: "Browse File",
+    scanCamera: "Scan with Camera",
+    listeningText: "Listening...",
+    voiceText: "Voice",
+    recentScans: "Recent Scans",
+    wantScanAnother: "Want to scan another medicine?",
+    tapBelow: "Tap the button below to start a new scan",
   },
   "hi-IN": {
     medicine: "दवा",
@@ -84,6 +128,28 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     valid: "वैध",
     expired: "समाप्त",
     unknown: "अज्ञात",
+    mfgDate: "निर्माण तिथि",
+    expDate: "समाप्ति तिथि",
+    usedFor: "उपयोग के लिए",
+    howToUse: "उपयोग कैसे करें",
+    drugClass: "दवा वर्ग",
+    sideEffects: "दुष्प्रभाव",
+    warnings: "चेतावनी",
+    notDetected: "नहीं मिला",
+    showRawOcr: "OCR टेक्स्ट दिखाएं",
+    hideRawOcr: "OCR टेक्स्ट छुपाएं",
+    scanResults: "स्कैन परिणाम",
+    scanAnother: "अन्य दवा स्कैन करें",
+    uploadScan: "दवा अपलोड और स्कैन करें",
+    analyzeBtn: "दवा स्ट्रिप का विश्लेषण करें",
+    readingStrip: "दवा स्ट्रिप पढ़ रहे हैं...",
+    browseFile: "फ़ाइल चुनें",
+    scanCamera: "कैमरे से स्कैन करें",
+    listeningText: "सुन रहे हैं...",
+    voiceText: "आवाज़",
+    recentScans: "हाल के स्कैन",
+    wantScanAnother: "क्या आप और दवा स्कैन करना चाहते हैं?",
+    tapBelow: "नया स्कैन शुरू करने के लिए नीचे बटन दबाएं",
   },
   "es-ES": {
     medicine: "Medicamento",
@@ -93,6 +159,28 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     valid: "Válido",
     expired: "Vencido",
     unknown: "Desconocido",
+    mfgDate: "Fecha de fabricación",
+    expDate: "Fecha de vencimiento",
+    usedFor: "Usado para",
+    howToUse: "Cómo usar",
+    drugClass: "Clase de medicamento",
+    sideEffects: "Efectos secundarios",
+    warnings: "Advertencias",
+    notDetected: "No detectado",
+    showRawOcr: "Mostrar texto OCR",
+    hideRawOcr: "Ocultar texto OCR",
+    scanResults: "Resultados del escaneo",
+    scanAnother: "Escanear otro medicamento",
+    uploadScan: "Cargar y escanear medicamento",
+    analyzeBtn: "Analizar tira de medicamento",
+    readingStrip: "Leyendo tira de medicamento...",
+    browseFile: "Buscar archivo",
+    scanCamera: "Escanear con cámara",
+    listeningText: "Escuchando...",
+    voiceText: "Voz",
+    recentScans: "Escaneos recientes",
+    wantScanAnother: "¿Quieres escanear otro medicamento?",
+    tapBelow: "Toca el botón de abajo para iniciar un nuevo escaneo",
   },
   "fr-FR": {
     medicine: "Médicament",
@@ -102,6 +190,28 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     valid: "Valide",
     expired: "Expiré",
     unknown: "Inconnu",
+    mfgDate: "Date de fabrication",
+    expDate: "Date d'expiration",
+    usedFor: "Utilisé pour",
+    howToUse: "Comment utiliser",
+    drugClass: "Classe de médicament",
+    sideEffects: "Effets secondaires",
+    warnings: "Avertissements",
+    notDetected: "Non détecté",
+    showRawOcr: "Afficher le texte OCR",
+    hideRawOcr: "Masquer le texte OCR",
+    scanResults: "Résultats du scan",
+    scanAnother: "Scanner un autre médicament",
+    uploadScan: "Charger et scanner le médicament",
+    analyzeBtn: "Analyser la bandelette",
+    readingStrip: "Lecture de la bandelette...",
+    browseFile: "Parcourir le fichier",
+    scanCamera: "Scanner avec la caméra",
+    listeningText: "Écoute...",
+    voiceText: "Voix",
+    recentScans: "Scans récents",
+    wantScanAnother: "Voulez-vous scanner un autre médicament?",
+    tapBelow: "Appuyez sur le bouton ci-dessous pour commencer un nouveau scan",
   },
   "ar-SA": {
     medicine: "دواء",
@@ -111,6 +221,28 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     valid: "صالح",
     expired: "منتهي الصلاحية",
     unknown: "غير معروف",
+    mfgDate: "تاريخ الصنع",
+    expDate: "تاريخ الانتهاء",
+    usedFor: "يُستخدم لـ",
+    howToUse: "طريقة الاستخدام",
+    drugClass: "فئة الدواء",
+    sideEffects: "الآثار الجانبية",
+    warnings: "تحذيرات",
+    notDetected: "غير محدد",
+    showRawOcr: "عرض نص OCR",
+    hideRawOcr: "إخفاء نص OCR",
+    scanResults: "نتائج المسح",
+    scanAnother: "مسح دواء آخر",
+    uploadScan: "رفع ومسح الدواء",
+    analyzeBtn: "تحليل شريط الدواء",
+    readingStrip: "جارٍ قراءة شريط الدواء...",
+    browseFile: "تصفح الملف",
+    scanCamera: "المسح بالكاميرا",
+    listeningText: "يستمع...",
+    voiceText: "صوت",
+    recentScans: "عمليات المسح الأخيرة",
+    wantScanAnother: "هل تريد مسح دواء آخر؟",
+    tapBelow: "اضغط الزر أدناه لبدء مسح جديد",
   },
   "zh-CN": {
     medicine: "药品",
@@ -120,6 +252,28 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     valid: "有效",
     expired: "已过期",
     unknown: "未知",
+    mfgDate: "生产日期",
+    expDate: "有效期至",
+    usedFor: "用于",
+    howToUse: "使用方法",
+    drugClass: "药物类别",
+    sideEffects: "副作用",
+    warnings: "警告",
+    notDetected: "未检测到",
+    showRawOcr: "显示OCR文本",
+    hideRawOcr: "隐藏OCR文本",
+    scanResults: "扫描结果",
+    scanAnother: "扫描另一种药物",
+    uploadScan: "上传并扫描药物",
+    analyzeBtn: "分析药板",
+    readingStrip: "正在读取药板...",
+    browseFile: "浏览文件",
+    scanCamera: "用相机扫描",
+    listeningText: "监听中...",
+    voiceText: "语音",
+    recentScans: "最近扫描",
+    wantScanAnother: "要扫描另一种药物吗？",
+    tapBelow: "点击下方按钮开始新扫描",
   },
   "de-DE": {
     medicine: "Medikament",
@@ -129,6 +283,29 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     valid: "Gültig",
     expired: "Abgelaufen",
     unknown: "Unbekannt",
+    mfgDate: "Herstellungsdatum",
+    expDate: "Verfallsdatum",
+    usedFor: "Verwendet für",
+    howToUse: "Verwendungshinweis",
+    drugClass: "Arzneimittelklasse",
+    sideEffects: "Nebenwirkungen",
+    warnings: "Warnhinweise",
+    notDetected: "Nicht erkannt",
+    showRawOcr: "OCR-Text anzeigen",
+    hideRawOcr: "OCR-Text ausblenden",
+    scanResults: "Scan-Ergebnisse",
+    scanAnother: "Weiteres Medikament scannen",
+    uploadScan: "Medikament hochladen & scannen",
+    analyzeBtn: "Medikamentenstreifen analysieren",
+    readingStrip: "Streifen wird gelesen...",
+    browseFile: "Datei durchsuchen",
+    scanCamera: "Mit Kamera scannen",
+    listeningText: "Höre zu...",
+    voiceText: "Sprache",
+    recentScans: "Letzte Scans",
+    wantScanAnother: "Möchten Sie ein weiteres Medikament scannen?",
+    tapBelow:
+      "Tippen Sie auf die Schaltfläche unten, um einen neuen Scan zu starten",
   },
   "pt-BR": {
     medicine: "Medicamento",
@@ -138,6 +315,28 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     valid: "Válido",
     expired: "Vencido",
     unknown: "Desconhecido",
+    mfgDate: "Data de fabricação",
+    expDate: "Data de validade",
+    usedFor: "Usado para",
+    howToUse: "Como usar",
+    drugClass: "Classe do medicamento",
+    sideEffects: "Efeitos colaterais",
+    warnings: "Avisos",
+    notDetected: "Não detectado",
+    showRawOcr: "Mostrar texto OCR",
+    hideRawOcr: "Ocultar texto OCR",
+    scanResults: "Resultados do escaneamento",
+    scanAnother: "Escanear outro medicamento",
+    uploadScan: "Carregar e escanear medicamento",
+    analyzeBtn: "Analisar tira do medicamento",
+    readingStrip: "Lendo tira do medicamento...",
+    browseFile: "Procurar arquivo",
+    scanCamera: "Escanear com câmera",
+    listeningText: "Ouvindo...",
+    voiceText: "Voz",
+    recentScans: "Scans recentes",
+    wantScanAnother: "Deseja escanear outro medicamento?",
+    tapBelow: "Toque no botão abaixo para iniciar um novo scan",
   },
   "ru-RU": {
     medicine: "Лекарство",
@@ -147,6 +346,28 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     valid: "Действительно",
     expired: "Просрочено",
     unknown: "Неизвестно",
+    mfgDate: "Дата производства",
+    expDate: "Срок годности",
+    usedFor: "Применяется при",
+    howToUse: "Способ применения",
+    drugClass: "Класс препарата",
+    sideEffects: "Побочные эффекты",
+    warnings: "Предупреждения",
+    notDetected: "Не обнаружено",
+    showRawOcr: "Показать OCR текст",
+    hideRawOcr: "Скрыть OCR текст",
+    scanResults: "Результаты сканирования",
+    scanAnother: "Сканировать другой препарат",
+    uploadScan: "Загрузить и сканировать лекарство",
+    analyzeBtn: "Анализировать полоску",
+    readingStrip: "Читаю полоску...",
+    browseFile: "Обзор файла",
+    scanCamera: "Сканировать камерой",
+    listeningText: "Слушаю...",
+    voiceText: "Голос",
+    recentScans: "Недавние сканирования",
+    wantScanAnother: "Хотите сканировать другое лекарство?",
+    tapBelow: "Нажмите кнопку ниже, чтобы начать новое сканирование",
   },
   "ja-JP": {
     medicine: "薬",
@@ -156,6 +377,28 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     valid: "有効",
     expired: "期限切れ",
     unknown: "不明",
+    mfgDate: "製造日",
+    expDate: "有効期限",
+    usedFor: "使用目的",
+    howToUse: "使用方法",
+    drugClass: "薬の分類",
+    sideEffects: "副作用",
+    warnings: "警告",
+    notDetected: "検出されず",
+    showRawOcr: "OCRテキストを表示",
+    hideRawOcr: "OCRテキストを非表示",
+    scanResults: "スキャン結果",
+    scanAnother: "別の薬をスキャン",
+    uploadScan: "薬をアップロード＆スキャン",
+    analyzeBtn: "薬のストリップを分析",
+    readingStrip: "ストリップを読み取り中...",
+    browseFile: "ファイルを参照",
+    scanCamera: "カメラでスキャン",
+    listeningText: "聞いています...",
+    voiceText: "音声",
+    recentScans: "最近のスキャン",
+    wantScanAnother: "別の薬をスキャンしますか？",
+    tapBelow: "新しいスキャンを開始するには下のボタンをタップ",
   },
   "ta-IN": {
     medicine: "மருந்து",
@@ -165,6 +408,28 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     valid: "செல்லுபடியாகும்",
     expired: "காலாவதியானது",
     unknown: "தெரியவில்லை",
+    mfgDate: "தயாரிப்பு தேதி",
+    expDate: "காலாவதி தேதி",
+    usedFor: "பயன்பாடு",
+    howToUse: "பயன்படுத்தும் முறை",
+    drugClass: "மருந்து வகை",
+    sideEffects: "பக்க விளைவுகள்",
+    warnings: "எச்சரிக்கைகள்",
+    notDetected: "கண்டறியப்படவில்லை",
+    showRawOcr: "OCR உரையை காட்டு",
+    hideRawOcr: "OCR உரையை மறை",
+    scanResults: "ஸ்கேன் முடிவுகள்",
+    scanAnother: "மற்றொரு மருந்து ஸ்கேன் செய்யுங்கள்",
+    uploadScan: "மருந்து பதிவேற்றம் & ஸ்கேன்",
+    analyzeBtn: "மருந்து ஸ்ட்ரிப் பகுப்பாய்வு",
+    readingStrip: "மருந்து ஸ்ட்ரிப் படிக்கிறது...",
+    browseFile: "கோப்பு தேடுங்கள்",
+    scanCamera: "கேமராவில் ஸ்கேன் செய்யுங்கள்",
+    listeningText: "கேட்கிறது...",
+    voiceText: "குரல்",
+    recentScans: "சமீபத்திய ஸ்கேன்கள்",
+    wantScanAnother: "மற்றொரு மருந்து ஸ்கேன் செய்ய விரும்புகிறீர்களா?",
+    tapBelow: "புதிய ஸ்கேன் தொடங்க கீழே உள்ள பொத்தானை அழுத்துங்கள்",
   },
   "ur-PK": {
     medicine: "دوا",
@@ -174,6 +439,28 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     valid: "درست",
     expired: "میعاد ختم",
     unknown: "نامعلوم",
+    mfgDate: "تاریخ تیاری",
+    expDate: "میعاد ختم",
+    usedFor: "استعمال",
+    howToUse: "استعمال کا طریقہ",
+    drugClass: "دوا کی قسم",
+    sideEffects: "ضمنی اثرات",
+    warnings: "احتیاطی تدابیر",
+    notDetected: "نہیں ملا",
+    showRawOcr: "OCR متن دکھائیں",
+    hideRawOcr: "OCR متن چھپائیں",
+    scanResults: "اسکین کے نتائج",
+    scanAnother: "دوسری دوا اسکین کریں",
+    uploadScan: "دوا اپ لوڈ اور اسکین کریں",
+    analyzeBtn: "دوا کی پٹی کا تجزیہ کریں",
+    readingStrip: "دوا کی پٹی پڑھ رہے ہیں...",
+    browseFile: "فائل تلاش کریں",
+    scanCamera: "کیمرے سے اسکین کریں",
+    listeningText: "سن رہے ہیں...",
+    voiceText: "آواز",
+    recentScans: "حالیہ اسکینز",
+    wantScanAnother: "کیا آپ دوسری دوا اسکین کرنا چاہتے ہیں؟",
+    tapBelow: "نیا اسکین شروع کرنے کے لیے نیچے بٹن دبائیں",
   },
   "te-IN": {
     medicine: "మందు",
@@ -183,6 +470,28 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     valid: "చెల్లుబాటు అవుతుంది",
     expired: "గడువు ముగిసింది",
     unknown: "తెలియదు",
+    mfgDate: "తయారీ తేదీ",
+    expDate: "గడువు తేదీ",
+    usedFor: "వినియోగం",
+    howToUse: "ఉపయోగ విధానం",
+    drugClass: "మందు వర్గం",
+    sideEffects: "దుష్ప్రభావాలు",
+    warnings: "హెచ్చరికలు",
+    notDetected: "గుర్తించబడలేదు",
+    showRawOcr: "OCR టెక్స్ట్ చూపించు",
+    hideRawOcr: "OCR టెక్స్ట్ దాచు",
+    scanResults: "స్కాన్ ఫలితాలు",
+    scanAnother: "మరొక మందు స్కాన్ చేయండి",
+    uploadScan: "మందు అప్‌లోడ్ & స్కాన్ చేయండి",
+    analyzeBtn: "మందు స్ట్రిప్ విశ్లేషించండి",
+    readingStrip: "మందు స్ట్రిప్ చదువుతోంది...",
+    browseFile: "ఫైల్ చూడండి",
+    scanCamera: "కెమెరాతో స్కాన్ చేయండి",
+    listeningText: "వింటోంది...",
+    voiceText: "వాయిస్",
+    recentScans: "ఇటీవలి స్కాన్‌లు",
+    wantScanAnother: "మరొక మందు స్కాన్ చేయాలనుకుంటున్నారా?",
+    tapBelow: "కొత్త స్కాన్ ప్రారంభించడానికి దిగువ బటన్ నొక్కండి",
   },
 };
 
@@ -898,23 +1207,57 @@ function speakResult(
       : status === "expired"
         ? tpl.expired
         : tpl.unknown;
-  const mfg = formatDateDisplay(result.manufacturing_date) || tpl.unknown;
-  const exp = formatDateDisplay(result.expiry_date) || tpl.unknown;
-  const name = result.medicine_name || tpl.unknown;
-  const usedForText = result.used_for ? ` Used for: ${result.used_for}` : "";
-  const howToUseText = result.how_to_use
-    ? ` How to use: ${result.how_to_use}`
-    : "";
-  const sideEffectsText = result.side_effects
-    ? ` Side effects: ${result.side_effects}`
-    : "";
-  const warningsText = result.warnings ? ` Warnings: ${result.warnings}` : "";
-  const text = `${tpl.medicine}: ${name}. ${tpl.mfg}: ${mfg}. ${tpl.exp}: ${exp}. ${tpl.status}: ${statusText}.${usedForText}${howToUseText}${sideEffectsText}${warningsText}`;
+  const mfg = formatDateDisplay(result.manufacturing_date) || tpl.notDetected;
+  const exp = formatDateDisplay(result.expiry_date) || tpl.notDetected;
+  const name = result.medicine_name || tpl.notDetected;
+
+  // Build natural spoken text with pauses using translated labels
+  const parts = [
+    `${tpl.medicine}: ${name}.`,
+    `${tpl.mfgDate}: ${mfg}.`,
+    `${tpl.expDate}: ${exp}.`,
+    `${tpl.status}: ${statusText}.`,
+  ];
+  if (result.used_for) parts.push(`${tpl.usedFor}: ${result.used_for}.`);
+  if (result.how_to_use) parts.push(`${tpl.howToUse}: ${result.how_to_use}.`);
+  if (result.side_effects)
+    parts.push(`${tpl.sideEffects}: ${result.side_effects}.`);
+  if (result.warnings) parts.push(`${tpl.warnings}: ${result.warnings}.`);
+
+  const text = parts.join(" ");
+
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
-  utterance.rate = 0.92;
+  utterance.rate = 0.85;
+  utterance.pitch = 1.0;
+  utterance.volume = 1.0;
+
+  // Pick best voice for the language (prefer local/native voices)
+  function selectVoice(utt: SpeechSynthesisUtterance) {
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) return;
+    const langPrefix = lang.split("-")[0];
+    const matching = voices.filter((v) => v.lang.startsWith(langPrefix));
+    const local = matching.find((v) => v.localService);
+    utt.voice = local || matching[0] || null;
+  }
+
   window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
+
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    selectVoice(utterance);
+    window.speechSynthesis.speak(utterance);
+  } else {
+    // Voices not loaded yet — wait for voiceschanged event
+    const handler = () => {
+      selectVoice(utterance);
+      window.speechSynthesis.speak(utterance);
+      window.speechSynthesis.removeEventListener("voiceschanged", handler);
+    };
+    window.speechSynthesis.addEventListener("voiceschanged", handler);
+  }
+
   return utterance;
 }
 
@@ -1064,24 +1407,28 @@ async function fetchMedicineInfo(medicineName: string): Promise<{
 }
 
 // ------- StatusBadge -------
-function StatusBadge({ status }: { status: "valid" | "expired" | "unknown" }) {
+function StatusBadge({
+  status,
+  lang,
+}: { status: "valid" | "expired" | "unknown"; lang?: string }) {
+  const tpl = LANG_TEMPLATES[lang || "en-US"] || LANG_TEMPLATES["en-US"];
   if (status === "valid") {
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-success/10 text-success">
-        <CheckCircle2 className="w-3.5 h-3.5" /> Valid
+        <CheckCircle2 className="w-3.5 h-3.5" /> {tpl.valid}
       </span>
     );
   }
   if (status === "expired") {
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-destructive/10 text-destructive">
-        <AlertCircle className="w-3.5 h-3.5" /> Expired
+        <AlertCircle className="w-3.5 h-3.5" /> {tpl.expired}
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
-      <Clock className="w-3.5 h-3.5" /> Unknown
+      <Clock className="w-3.5 h-3.5" /> {tpl.unknown}
     </span>
   );
 }
@@ -1099,6 +1446,7 @@ function ResultCard({
   const [showRaw, setShowRaw] = useState(false);
   const status = getExpiryStatus(result.expiry_date);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const tpl = LANG_TEMPLATES[voiceLang || "en-US"] || LANG_TEMPLATES["en-US"];
   const hasSpeechSupport =
     typeof window !== "undefined" && !!window.speechSynthesis;
 
@@ -1157,11 +1505,11 @@ function ResultCard({
             <Pill className="w-4 h-4 text-primary" />
           </div>
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Medicine
+            {tpl.medicine}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <StatusBadge status={status} />
+          <StatusBadge status={status} lang={voiceLang} />
           {hasSpeechSupport && (
             <button
               type="button"
@@ -1184,25 +1532,25 @@ function ResultCard({
         </div>
       </div>
       <p className="text-xl font-bold text-foreground mb-5 leading-tight">
-        {result.medicine_name || "Not detected"}
+        {result.medicine_name || tpl.notDetected}
       </p>
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-muted/60 rounded-xl p-3">
           <div className="flex items-center gap-1.5 mb-1">
             <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground font-medium">
-              MFG Date
+              {tpl.mfgDate}
             </span>
           </div>
           <p className="text-sm font-semibold text-foreground">
-            {formatDateDisplay(result.manufacturing_date) || "Not detected"}
+            {formatDateDisplay(result.manufacturing_date) || tpl.notDetected}
           </p>
         </div>
         <div className="bg-muted/60 rounded-xl p-3">
           <div className="flex items-center gap-1.5 mb-1">
             <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground font-medium">
-              EXP Date
+              {tpl.expDate}
             </span>
           </div>
           <p
@@ -1214,7 +1562,7 @@ function ResultCard({
                   : "text-foreground"
             }`}
           >
-            {formatDateDisplay(result.expiry_date) || "Not detected"}
+            {formatDateDisplay(result.expiry_date) || tpl.notDetected}
           </p>
         </div>
       </div>
@@ -1223,7 +1571,7 @@ function ResultCard({
           <div className="flex items-center gap-1.5 mb-2">
             <BookOpen className="w-3.5 h-3.5 text-primary" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Used For
+              {tpl.usedFor}
             </span>
           </div>
           <p className="text-sm text-foreground leading-relaxed">
@@ -1236,7 +1584,7 @@ function ResultCard({
           <div className="flex items-center gap-1.5 mb-2">
             <BookOpen className="w-3.5 h-3.5 text-primary" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              How to Use
+              {tpl.howToUse}
             </span>
           </div>
           <p className="text-sm text-foreground leading-relaxed">
@@ -1249,7 +1597,7 @@ function ResultCard({
           <div className="flex items-center gap-1.5 mb-2">
             <Layers className="w-3.5 h-3.5 text-primary" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Drug Class
+              {tpl.drugClass}
             </span>
           </div>
           <span className="inline-block text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
@@ -1262,7 +1610,7 @@ function ResultCard({
           <div className="flex items-center gap-1.5 mb-2">
             <AlertTriangle className="w-3.5 h-3.5 text-yellow-500" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Side Effects
+              {tpl.sideEffects}
             </span>
           </div>
           <p className="text-sm text-foreground leading-relaxed">
@@ -1275,7 +1623,7 @@ function ResultCard({
           <div className="flex items-center gap-1.5 mb-2">
             <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Warnings
+              {tpl.warnings}
             </span>
           </div>
           <p className="text-sm text-foreground leading-relaxed">
@@ -1291,7 +1639,7 @@ function ResultCard({
             className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
           >
             <Eye className="w-3 h-3" />
-            {showRaw ? "Hide raw OCR text" : "Show raw OCR text"}
+            {showRaw ? tpl.hideRawOcr : tpl.showRawOcr}
           </button>
           {showRaw && (
             <pre className="mt-2 text-xs font-mono bg-muted/50 rounded-lg p-3 max-h-48 overflow-y-auto whitespace-pre-wrap break-words text-muted-foreground">
@@ -1305,7 +1653,11 @@ function ResultCard({
 }
 
 // ------- HistoryCard -------
-function HistoryCard({ item, index }: { item: HistoryItem; index: number }) {
+function HistoryCard({
+  item,
+  index,
+  lang,
+}: { item: HistoryItem; index: number; lang?: string }) {
   const status = getExpiryStatus(item.result.expiry_date);
   return (
     <motion.div
@@ -1328,7 +1680,7 @@ function HistoryCard({ item, index }: { item: HistoryItem; index: number }) {
           EXP: {formatDateDisplay(item.result.expiry_date) || "N/A"}
         </p>
         <div className="mt-2">
-          <StatusBadge status={status} />
+          <StatusBadge status={status} lang={lang} />
         </div>
       </div>
       <span className="text-xs text-muted-foreground flex-shrink-0">
@@ -1453,6 +1805,7 @@ export default function App() {
 
   // Voice state
   const [voiceLang, setVoiceLang] = useState("en-US");
+  const tpl = LANG_TEMPLATES[voiceLang] || LANG_TEMPLATES["en-US"];
   const [isListening, setIsListening] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState("");
   const recognitionRef = useRef<any>(null);
@@ -1624,20 +1977,31 @@ export default function App() {
       const res = extractMedicineData(combinedOcr, combinedOcr);
       const medicineInfo = await fetchMedicineInfo(res.medicine_name);
       const isoLang = VOICE_TO_ISO[voiceLang] || "en";
-      const [translatedUsedFor, translatedHowToUse] = await Promise.all([
+      const [
+        translatedUsedFor,
+        translatedHowToUse,
+        translatedSideEffects,
+        translatedWarnings,
+      ] = await Promise.all([
         isoLang !== "en" && medicineInfo.used_for
           ? translateText(medicineInfo.used_for, isoLang)
           : Promise.resolve(medicineInfo.used_for),
         isoLang !== "en" && medicineInfo.how_to_use
           ? translateText(medicineInfo.how_to_use, isoLang)
           : Promise.resolve(medicineInfo.how_to_use),
+        isoLang !== "en" && medicineInfo.side_effects
+          ? translateText(medicineInfo.side_effects, isoLang)
+          : Promise.resolve(medicineInfo.side_effects),
+        isoLang !== "en" && medicineInfo.warnings
+          ? translateText(medicineInfo.warnings, isoLang)
+          : Promise.resolve(medicineInfo.warnings),
       ]);
       const resWithUsage: ScanResult = {
         ...res,
         how_to_use: translatedHowToUse,
         used_for: translatedUsedFor,
-        side_effects: medicineInfo.side_effects,
-        warnings: medicineInfo.warnings,
+        side_effects: translatedSideEffects,
+        warnings: translatedWarnings,
         drug_class: medicineInfo.drug_class,
       };
       setResult(resWithUsage);
@@ -1869,7 +2233,7 @@ export default function App() {
               className="bg-card rounded-2xl shadow-card border border-border p-8"
             >
               <h2 className="text-2xl font-bold text-foreground mb-1">
-                Upload & Scan Medicine
+                {tpl.uploadScan}
               </h2>
               <p className="text-muted-foreground mb-6 text-sm">
                 Drag a photo or use your camera — OCR reads the strip labels
@@ -1946,7 +2310,7 @@ export default function App() {
                           onClick={() => fileInputRef.current?.click()}
                           className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm font-semibold hover:bg-primary/20 transition-colors"
                         >
-                          <Upload className="w-4 h-4" /> Browse File
+                          <Upload className="w-4 h-4" /> {tpl.browseFile}
                         </button>
                         <span className="text-muted-foreground text-xs">
                           or
@@ -1957,7 +2321,7 @@ export default function App() {
                           onClick={() => cameraInputRef.current?.click()}
                           className="flex items-center gap-2 px-4 py-2 bg-muted text-muted-foreground rounded-lg text-sm font-semibold hover:bg-muted/80 hover:text-foreground transition-colors"
                         >
-                          <Camera className="w-4 h-4" /> Scan with Camera
+                          <Camera className="w-4 h-4" /> {tpl.scanCamera}
                         </button>
                         {hasSpeechRecognition && (
                           <button
@@ -1982,7 +2346,7 @@ export default function App() {
                             ) : (
                               <Mic className="w-4 h-4" />
                             )}
-                            {isListening ? "Listening..." : "Voice"}
+                            {isListening ? tpl.listeningText : tpl.voiceText}
                           </button>
                         )}
                       </div>
@@ -2049,12 +2413,11 @@ export default function App() {
                     {analyzing ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Reading medicine strip...
+                        {tpl.readingStrip}
                       </>
                     ) : (
                       <>
-                        <FlaskConical className="w-4 h-4" /> Analyze Medicine
-                        Strip
+                        <FlaskConical className="w-4 h-4" /> {tpl.analyzeBtn}
                       </>
                     )}
                   </Button>
@@ -2125,7 +2488,7 @@ export default function App() {
             >
               <div className="max-w-3xl mx-auto">
                 <h2 className="text-xl font-bold text-foreground mb-4">
-                  Scan Results
+                  {tpl.scanResults}
                 </h2>
                 <ResultCard
                   result={result}
@@ -2134,10 +2497,10 @@ export default function App() {
                 />
                 <div className="mt-8 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 p-6 flex flex-col items-center gap-3 text-center">
                   <p className="text-base font-semibold text-foreground">
-                    Want to scan another medicine?
+                    {tpl.wantScanAnother}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Tap the button below to start a new scan
+                    {tpl.tapBelow}
                   </p>
                   <Button
                     data-ocid="scan.new_scan_button"
@@ -2155,7 +2518,7 @@ export default function App() {
                     size="lg"
                   >
                     <RotateCcw className="w-4 h-4" />
-                    Scan Another Medicine
+                    {tpl.scanAnother}
                   </Button>
                 </div>
               </div>
@@ -2170,7 +2533,7 @@ export default function App() {
               <div className="flex items-center gap-2 mb-4">
                 <History className="w-4.5 h-4.5 text-muted-foreground" />
                 <h2 className="text-base font-semibold text-foreground">
-                  Recent Scans
+                  {tpl.recentScans}
                 </h2>
                 {!loadingBackendHistory && (
                   <Badge variant="secondary" className="text-xs">
@@ -2201,7 +2564,12 @@ export default function App() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {history.map((item, i) => (
-                    <HistoryCard key={item.id} item={item} index={i} />
+                    <HistoryCard
+                      key={item.id}
+                      item={item}
+                      index={i}
+                      lang={voiceLang}
+                    />
                   ))}
                 </div>
               )}
