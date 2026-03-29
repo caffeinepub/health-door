@@ -845,6 +845,39 @@ function speakResult(
   return utterance;
 }
 
+// ------- Language code mapping for translation -------
+const VOICE_TO_ISO: Record<string, string> = {
+  "en-US": "en",
+  "hi-IN": "hi",
+  "es-ES": "es",
+  "fr-FR": "fr",
+  "ar-SA": "ar",
+  "zh-CN": "zh",
+  "de-DE": "de",
+  "pt-BR": "pt",
+  "ru-RU": "ru",
+  "ja-JP": "ja",
+  "ta-IN": "ta",
+  "ur-PK": "ur",
+  "te-IN": "te",
+};
+
+async function translateText(
+  text: string,
+  targetLang: string,
+): Promise<string> {
+  if (!text || targetLang === "en") return text;
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 500))}&langpair=en|${targetLang}`;
+    const resp = await fetch(url);
+    if (!resp.ok) return text;
+    const data = await resp.json();
+    return data?.responseData?.translatedText || text;
+  } catch {
+    return text;
+  }
+}
+
 async function fetchMedicineInfo(medicineName: string): Promise<{
   how_to_use: string;
   used_for: string;
@@ -1501,10 +1534,19 @@ export default function App() {
 
       const res = extractMedicineData(combinedOcr, combinedOcr);
       const medicineInfo = await fetchMedicineInfo(res.medicine_name);
+      const isoLang = VOICE_TO_ISO[voiceLang] || "en";
+      const [translatedUsedFor, translatedHowToUse] = await Promise.all([
+        isoLang !== "en" && medicineInfo.used_for
+          ? translateText(medicineInfo.used_for, isoLang)
+          : Promise.resolve(medicineInfo.used_for),
+        isoLang !== "en" && medicineInfo.how_to_use
+          ? translateText(medicineInfo.how_to_use, isoLang)
+          : Promise.resolve(medicineInfo.how_to_use),
+      ]);
       const resWithUsage: ScanResult = {
         ...res,
-        how_to_use: medicineInfo.how_to_use,
-        used_for: medicineInfo.used_for,
+        how_to_use: translatedHowToUse,
+        used_for: translatedUsedFor,
         side_effects: medicineInfo.side_effects,
         warnings: medicineInfo.warnings,
         drug_class: medicineInfo.drug_class,
@@ -1540,7 +1582,7 @@ export default function App() {
     } finally {
       setAnalyzing(false);
     }
-  }, [selectedFile, actor, previewUrl, history, isLoggedIn]);
+  }, [selectedFile, actor, previewUrl, history, isLoggedIn, voiceLang]);
 
   // Keep handleAnalyzeRef in sync for use inside recognition callback
   useEffect(() => {
