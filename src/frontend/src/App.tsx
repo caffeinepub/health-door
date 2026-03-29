@@ -1,13 +1,5 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
 import {
   AlertCircle,
@@ -17,21 +9,26 @@ import {
   ChevronRight,
   Clock,
   Eye,
-  EyeOff,
   FlaskConical,
   History,
   Loader2,
   LogOut,
+  Mic,
+  MicOff,
   Pill,
-  Settings,
   ShieldCheck,
   Upload,
   User,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+// Tesseract.js loaded via CDN in index.html
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare const Tesseract: any;
 import { useActor } from "./hooks/useActor";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 
@@ -50,21 +47,664 @@ interface HistoryItem {
   imageUrl: string;
 }
 
+interface LangTemplate {
+  medicine: string;
+  mfg: string;
+  exp: string;
+  status: string;
+  valid: string;
+  expired: string;
+  unknown: string;
+}
+
+// ------- Multi-language templates -------
+const LANG_TEMPLATES: Record<string, LangTemplate> = {
+  "en-US": {
+    medicine: "Medicine",
+    mfg: "Manufacturing date",
+    exp: "Expiry date",
+    status: "Status",
+    valid: "Valid",
+    expired: "Expired",
+    unknown: "Unknown",
+  },
+  "hi-IN": {
+    medicine: "दवा",
+    mfg: "निर्माण तिथि",
+    exp: "समाप्ति तिथि",
+    status: "स्थिति",
+    valid: "वैध",
+    expired: "समाप्त",
+    unknown: "अज्ञात",
+  },
+  "es-ES": {
+    medicine: "Medicamento",
+    mfg: "Fecha de fabricación",
+    exp: "Fecha de vencimiento",
+    status: "Estado",
+    valid: "Válido",
+    expired: "Vencido",
+    unknown: "Desconocido",
+  },
+  "fr-FR": {
+    medicine: "Médicament",
+    mfg: "Date de fabrication",
+    exp: "Date d'expiration",
+    status: "Statut",
+    valid: "Valide",
+    expired: "Expiré",
+    unknown: "Inconnu",
+  },
+  "ar-SA": {
+    medicine: "دواء",
+    mfg: "تاريخ الصنع",
+    exp: "تاريخ انتهاء الصلاحية",
+    status: "الحالة",
+    valid: "صالح",
+    expired: "منتهي الصلاحية",
+    unknown: "غير معروف",
+  },
+  "zh-CN": {
+    medicine: "药品",
+    mfg: "生产日期",
+    exp: "有效期",
+    status: "状态",
+    valid: "有效",
+    expired: "已过期",
+    unknown: "未知",
+  },
+  "de-DE": {
+    medicine: "Medikament",
+    mfg: "Herstellungsdatum",
+    exp: "Verfallsdatum",
+    status: "Status",
+    valid: "Gültig",
+    expired: "Abgelaufen",
+    unknown: "Unbekannt",
+  },
+  "pt-BR": {
+    medicine: "Medicamento",
+    mfg: "Data de fabricação",
+    exp: "Data de validade",
+    status: "Status",
+    valid: "Válido",
+    expired: "Vencido",
+    unknown: "Desconhecido",
+  },
+  "ru-RU": {
+    medicine: "Лекарство",
+    mfg: "Дата производства",
+    exp: "Срок годности",
+    status: "Статус",
+    valid: "Действительно",
+    expired: "Просрочено",
+    unknown: "Неизвестно",
+  },
+  "ja-JP": {
+    medicine: "薬",
+    mfg: "製造日",
+    exp: "有効期限",
+    status: "状態",
+    valid: "有効",
+    expired: "期限切れ",
+    unknown: "不明",
+  },
+  "ta-IN": {
+    medicine: "மருந்து",
+    mfg: "தயாரிப்பு தேதி",
+    exp: "காலாவதி தேதி",
+    status: "நிலை",
+    valid: "செல்லுபடியாகும்",
+    expired: "காலாவதியானது",
+    unknown: "தெரியவில்லை",
+  },
+  "ur-PK": {
+    medicine: "دوا",
+    mfg: "تاریخ تیاری",
+    exp: "میعاد ختم ہونے کی تاریخ",
+    status: "حالت",
+    valid: "درست",
+    expired: "میعاد ختم",
+    unknown: "نامعلوم",
+  },
+  "te-IN": {
+    medicine: "మందు",
+    mfg: "తయారీ తేదీ",
+    exp: "గడువు తేదీ",
+    status: "స్థితి",
+    valid: "చెల్లుబాటు అవుతుంది",
+    expired: "గడువు ముగిసింది",
+    unknown: "తెలియదు",
+  },
+};
+
+const LANGUAGES = [
+  { code: "en-US", label: "English", flag: "🇺🇸" },
+  { code: "hi-IN", label: "Hindi", flag: "🇮🇳" },
+  { code: "es-ES", label: "Español", flag: "🇪🇸" },
+  { code: "fr-FR", label: "Français", flag: "🇫🇷" },
+  { code: "ar-SA", label: "العربية", flag: "🇸🇦" },
+  { code: "zh-CN", label: "中文", flag: "🇨🇳" },
+  { code: "de-DE", label: "Deutsch", flag: "🇩🇪" },
+  { code: "pt-BR", label: "Português", flag: "🇧🇷" },
+  { code: "ru-RU", label: "Русский", flag: "🇷🇺" },
+  { code: "ja-JP", label: "日本語", flag: "🇯🇵" },
+  { code: "ta-IN", label: "தமிழ்", flag: "🇮🇳" },
+  { code: "ur-PK", label: "اردو", flag: "🇵🇰" },
+  { code: "te-IN", label: "తెలుగు", flag: "🇮🇳" },
+];
+
 // ------- Constants -------
-const STORAGE_KEY_API = "Health_Key";
 const STORAGE_KEY_HISTORY = "health_door_history";
 const MAX_HISTORY = 5;
+const MAX_DIM = 3000;
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+// 3-letter month abbreviations for OCR noise normalization
+const MONTH_ABBR: Record<string, number> = {
+  JAN: 0,
+  FEB: 1,
+  MAR: 2,
+  APR: 3,
+  MAY: 4,
+  JUN: 5,
+  JUL: 6,
+  AUG: 7,
+  SEP: 8,
+  OCT: 9,
+  NOV: 10,
+  DEC: 11,
+};
+
+/** Normalize OCR noise in raw text */
+function normalizeOcrText(raw: string): string {
+  let t = raw;
+  // Fix zero -> O in month abbreviations (e.g. JAN -> JAN, but 0CT -> OCT)
+  t = t.replace(/\b0CT\b/gi, "OCT");
+  t = t.replace(/\b0EC\b/gi, "DEC");
+  t = t.replace(/\b0AN\b/gi, "JAN");
+  // Fix lowercase L -> 1 in date digit positions (e.g. 0l/2024)
+  t = t.replace(/(\d)l([\/\-\.])(\d)/g, "$11$2$3");
+  t = t.replace(/([\/\-\.])(l)(\d)/g, "$11$3");
+  // Remove spaces inserted mid-date by OCR (e.g. "12 / 2024" -> "12/2024")
+  t = t.replace(/(\d)\s*[\/\-\.]\s*(\d)/g, (_, a, b) => `${a}/${b}`);
+  // Normalize line endings
+  t = t.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  return t;
+}
+
+/** Format an extracted date string into "Month YYYY" for display only. */
+function formatDateDisplay(dateStr: string): string {
+  if (!dateStr || dateStr === "Not detected") return dateStr;
+
+  // DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
+  const ddMMYYYY = dateStr.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if (ddMMYYYY) {
+    const m = Number(ddMMYYYY[2]) - 1;
+    const y = Number(ddMMYYYY[3]);
+    if (m >= 0 && m <= 11) return `${MONTH_NAMES[m]} ${y}`;
+  }
+
+  // MM/YYYY or MM-YYYY or MM.YYYY
+  const mmYYYY = dateStr.match(/^(\d{1,2})[\/\-\.](\d{4})$/);
+  if (mmYYYY) {
+    const m = Number(mmYYYY[1]) - 1;
+    const y = Number(mmYYYY[2]);
+    if (m >= 0 && m <= 11) return `${MONTH_NAMES[m]} ${y}`;
+  }
+
+  // MM/YY or MM-YY
+  const mmYY = dateStr.match(/^(\d{1,2})[\/\-](\d{2})$/);
+  if (mmYY) {
+    const m = Number(mmYY[1]) - 1;
+    const y = 2000 + Number(mmYY[2]);
+    if (m >= 0 && m <= 11) return `${MONTH_NAMES[m]} ${y}`;
+  }
+
+  // YYYY/MM or YYYY-MM
+  const yyyyMM = dateStr.match(/^(\d{4})[\/\-](\d{1,2})$/);
+  if (yyyyMM) {
+    const y = Number(yyyyMM[1]);
+    const m = Number(yyyyMM[2]) - 1;
+    if (m >= 0 && m <= 11) return `${MONTH_NAMES[m]} ${y}`;
+  }
+
+  // Full month name + year (e.g. "JANUARY 2026" or "January 2026")
+  const fullMonYYYY = dateStr.match(/^([A-Za-z]{4,9})\s+(\d{4})$/);
+  if (fullMonYYYY) {
+    const abbr = fullMonYYYY[1].toUpperCase().slice(0, 3);
+    const idx = MONTH_ABBR[abbr];
+    if (idx !== undefined) return `${MONTH_NAMES[idx]} ${fullMonYYYY[2]}`;
+  }
+
+  // MON/YYYY or MON-YYYY or MON YYYY (3-letter month)
+  const monYYYY = dateStr.match(/^([A-Za-z]{3})[\/\-\s](\d{4})$/);
+  if (monYYYY) {
+    const d = new Date(`${monYYYY[1]} 1 ${monYYYY[2]}`);
+    if (!Number.isNaN(d.getTime())) {
+      return `${MONTH_NAMES[d.getMonth()]} ${monYYYY[2]}`;
+    }
+  }
+
+  // MON/YY or MON-YY
+  const monYY = dateStr.match(/^([A-Za-z]{3})[\/\-\s](\d{2})$/);
+  if (monYY) {
+    const d = new Date(`${monYY[1]} 1 20${monYY[2]}`);
+    if (!Number.isNaN(d.getTime())) {
+      return `${MONTH_NAMES[d.getMonth()]} ${2000 + Number(monYY[2])}`;
+    }
+  }
+
+  return dateStr;
+}
 
 // ------- Helpers -------
+async function preprocessImage(
+  file: File,
+): Promise<{ sharpCanvas: HTMLCanvasElement; binCanvas: HTMLCanvasElement }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objUrl);
+
+      let scale: number;
+      const maxSide = Math.max(img.width, img.height);
+      // Aggressively upscale small images for better OCR
+      if (maxSide < 1200) {
+        scale = Math.min(4, 2400 / maxSide);
+      } else {
+        scale = Math.min(1, MAX_DIM / maxSide);
+      }
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+
+      const base = document.createElement("canvas");
+      base.width = w;
+      base.height = h;
+      const ctx = base.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // Step 1: Grayscale
+      const imageData = ctx.getImageData(0, 0, w, h);
+      const d = imageData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const gray = Math.round(
+          0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2],
+        );
+        d[i] = d[i + 1] = d[i + 2] = gray;
+      }
+      ctx.putImageData(imageData, 0, 0);
+
+      // Step 2: Sharpening via 3x3 convolution kernel
+      const src = ctx.getImageData(0, 0, w, h);
+      const dst = ctx.createImageData(w, h);
+      const kernel = [0, -1, 0, -1, 5, -1, 0, -1, 0];
+      const kSize = 3;
+      const half = Math.floor(kSize / 2);
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          let val = 0;
+          for (let ky = 0; ky < kSize; ky++) {
+            for (let kx = 0; kx < kSize; kx++) {
+              const sy = Math.min(h - 1, Math.max(0, y + ky - half));
+              const sx = Math.min(w - 1, Math.max(0, x + kx - half));
+              const idx = (sy * w + sx) * 4;
+              val += src.data[idx] * kernel[ky * kSize + kx];
+            }
+          }
+          const outIdx = (y * w + x) * 4;
+          const clamped = Math.min(255, Math.max(0, val));
+          dst.data[outIdx] =
+            dst.data[outIdx + 1] =
+            dst.data[outIdx + 2] =
+              clamped;
+          dst.data[outIdx + 3] = 255;
+        }
+      }
+
+      // sharpCanvas: grayscale + sharpened, no binarization (better for foil/varied backgrounds)
+      const sharpCanvas = document.createElement("canvas");
+      sharpCanvas.width = w;
+      sharpCanvas.height = h;
+      sharpCanvas.getContext("2d")!.putImageData(dst, 0, 0);
+
+      // binCanvas: adaptive binarization using Otsu-like mean threshold
+      const binCanvas = document.createElement("canvas");
+      binCanvas.width = w;
+      binCanvas.height = h;
+      const binCtx = binCanvas.getContext("2d")!;
+      const binData = binCtx.createImageData(w, h);
+      let pixSum = 0;
+      for (let i = 0; i < dst.data.length; i += 4) pixSum += dst.data[i];
+      const mean = pixSum / (w * h);
+      const threshold = mean * 0.85;
+      for (let i = 0; i < dst.data.length; i += 4) {
+        const v = dst.data[i] < threshold ? 0 : 255;
+        binData.data[i] = binData.data[i + 1] = binData.data[i + 2] = v;
+        binData.data[i + 3] = 255;
+      }
+      binCtx.putImageData(binData, 0, 0);
+
+      resolve({ sharpCanvas, binCanvas });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objUrl);
+      reject(new Error("Image load failed"));
+    };
+    img.src = objUrl;
+  });
+}
+
+/** Parse a date string into a Date for comparison. Returns null if unparseable. */
+function parseDate(dateStr: string): Date | null {
+  // DD/MM/YYYY
+  const ddMMYYYY = dateStr.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if (ddMMYYYY) {
+    const day = Number(ddMMYYYY[1]);
+    const month = Number(ddMMYYYY[2]) - 1;
+    const year = Number(ddMMYYYY[3]);
+    if (month >= 0 && month <= 11 && day >= 1 && day <= 31)
+      return new Date(year, month, day);
+  }
+
+  // MM/YYYY or MM-YYYY or MM.YYYY
+  const mmYYYY = dateStr.match(/^(\d{1,2})[\/\-\.](\d{4})$/);
+  if (mmYYYY) return new Date(Number(mmYYYY[2]), Number(mmYYYY[1]) - 1, 1);
+
+  // YYYY/MM or YYYY-MM
+  const yyyyMM = dateStr.match(/^(\d{4})[\/\-](\d{1,2})$/);
+  if (yyyyMM) return new Date(Number(yyyyMM[1]), Number(yyyyMM[2]) - 1, 1);
+
+  // MM/YY or MM-YY
+  const mmYY = dateStr.match(/^(\d{1,2})[\/\-](\d{2})$/);
+  if (mmYY) return new Date(2000 + Number(mmYY[2]), Number(mmYY[1]) - 1, 1);
+
+  // Full month name + year (JANUARY 2026)
+  const fullMon = dateStr.match(/^([A-Za-z]{4,9})\s+(\d{4})$/);
+  if (fullMon) {
+    const abbr = fullMon[1].toUpperCase().slice(0, 3);
+    const idx = MONTH_ABBR[abbr];
+    if (idx !== undefined) return new Date(Number(fullMon[2]), idx, 1);
+  }
+
+  // MON YYYY or MON-YYYY or MON/YYYY
+  const monYYYY = dateStr.match(/^([A-Za-z]{3})[\/\-\s](\d{4})$/);
+  if (monYYYY) {
+    const d = new Date(`${monYYYY[1]} 1 ${monYYYY[2]}`);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+
+  // MON-YY or MON/YY
+  const monYY = dateStr.match(/^([A-Za-z]{3})[\/\-\s](\d{2})$/);
+  if (monYY) {
+    const d = new Date(`${monYY[1]} 1 20${monYY[2]}`);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+
+  return null;
+}
+
+function extractMedicineData(
+  primaryText: string,
+  combinedText: string,
+): ScanResult {
+  // Normalize OCR noise
+  const text = normalizeOcrText(combinedText).replace(/[|]/g, "I");
+  const primaryNorm = normalizeOcrText(primaryText).replace(/[|]/g, "I");
+
+  const lines = primaryNorm
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+
+  // --- Expiry date ---
+  let expiry_date = "Not detected";
+  const expPatterns = [
+    // Indian medicine common format: MM-YYYY or MM/YYYY after EXP label
+    /EXP\.?\s*:?\s*(\d{2}[\/\-]\d{4})/i,
+    // "Exp Date" followed by month name
+    /EXP(?:IRY)?\s+DATE\s*:?\s*([A-Za-z]{3,9}\.?\s*\d{4})/i,
+    // DD/MM/YYYY style
+    /(?:EXP(?:IRY)?(?:\s+DATE)?|USE\s+(?:BEFORE|BY)|BEST\s+BEFORE|BB|VALID\s+(?:UPTO|TILL)|UPTO|BEFORE)[:\s.]*(\d{1,2}[\/\-\.](\d{1,2})[\/\-\.](\d{4}))/i,
+    // Classic label: date with optional 3-letter month prefix
+    /(?:EXP(?:IRY)?(?:\s+DATE)?|USE\s+(?:BEFORE|BY)|BEST\s+BEFORE|BB|VALID\s+(?:UPTO|TILL)|UPTO|BEFORE)[:\s.]*([A-Za-z]{0,3}\.?\s*\d{1,2}[\/\-\.]\d{2,4})/i,
+    // Full month name
+    /(?:EXP(?:IRY)?(?:\s+DATE)?|USE\s+(?:BEFORE|BY)|BEST\s+BEFORE|VALID\s+(?:UPTO|TILL))[:\s.]*([A-Za-z]{3,9}[\s\-]+\d{2,4})/i,
+    // YYYY/MM style
+    /(?:EXP(?:IRY)?\.?)[:\s.]*(\d{4}[\/\-]\d{1,2})/i,
+    // DD/MM/YYYY standalone exp
+    /EXP[:\s.]+(\d{2}[\/\-\.](\d{2})[\/\-\.](\d{4}))/i,
+    // MM/YYYY
+    /EXP[:\s.]+(\d{2}[\/\-\.]\d{4})/i,
+    // MM/YY
+    /EXP[:\s.]+(\d{2}[\/\-\.]\d{2})\b/i,
+    /(?:USE\s+BEFORE|USE\sBY|EXPIRY\s+DATE|EXPIRY|MFGDT)[:\s.]*(\d{2}[\/\-\.]\d{2,4})/i,
+  ];
+  for (const p of expPatterns) {
+    const m = text.match(p);
+    if (m?.[1]) {
+      expiry_date = m[1].trim();
+      break;
+    }
+  }
+
+  // --- Manufacturing date ---
+  let manufacturing_date = "Not detected";
+  const mfgPatterns = [
+    /MFG\.?\s*:?\s*(\d{2}[\/\-]\d{4})/i,
+    /MFG(?:\s+DATE)?\s*:?\s*([A-Za-z]{3,9}\.?\s*\d{4})/i,
+    // DD/MM/YYYY style
+    /(?:MFG\.?|MFD\.?|MFGD\.?|DOM\.?|DATE\s+OF\s+MFG\.?|MANUFACTURING\s+DATE|MFD\s+ON|MFGDT\.?)[:\s.]*(\d{1,2}[\/\-\.](\d{1,2})[\/\-\.](\d{4}))/i,
+    // Classic label: date with optional 3-letter month prefix
+    /(?:MFG\.?|MFD\.?|MFGD\.?|DOM\.?|DATE\s+OF\s+MFG\.?|MANUFACTURING\s+DATE|MFD\s+ON|MANUFACTURED)[:\s.]*([A-Za-z]{0,3}\.?\s*\d{1,2}[\/\-\.]\d{2,4})/i,
+    // Full month name
+    /(?:MFG\.?|MFD\.?|MANUFACTURING\s+DATE|DATE\s+OF\s+MFG)[:\s.]*([A-Za-z]{3,9}[\s\-]+\d{2,4})/i,
+    // YYYY/MM style
+    /(?:MFG\.?|MFD\.?)[:\s.]*(\d{4}[\/\-]\d{1,2})/i,
+    // MM/YYYY
+    /MFG[:\s.]+(\d{2}[\/\-\.]\d{4})/i,
+    // MM/YY
+    /MFG[:\s.]+(\d{2}[\/\-\.]\d{2})\b/i,
+    /(?:DATE\s+OF\s+MFG|DOM|MFD\s+ON|MFGDT)[:\s.]*(\d{2}[\/\-\.]\d{2,4})/i,
+  ];
+  for (const p of mfgPatterns) {
+    const m = text.match(p);
+    if (m?.[1]) {
+      manufacturing_date = m[1].trim();
+      break;
+    }
+  }
+
+  // --- Generic fallback date extraction ---
+  if (expiry_date === "Not detected" || manufacturing_date === "Not detected") {
+    const genericPatterns = [
+      /(\d{1,2}[\/\-\.](\d{1,2})[\/\-\.](\d{4}))/g, // DD/MM/YYYY
+      /(\d{2})[\/\-\.](\d{4})/g, // MM/YYYY
+      /(\d{4})[\/\-](\d{2})\b/g, // YYYY/MM
+      /(\d{2})[\/\-](\d{2})\b/g, // MM/YY
+      /([A-Za-z]{3})[\/\-\s](\d{4})\b/g, // MON/YYYY
+      /([A-Za-z]{3})[\/\-\s](\d{2})\b/g, // MON/YY
+      /([A-Z][a-z]{3,8})\s+(\d{4})\b/g, // Full month name + YYYY
+    ];
+
+    const foundDates: string[] = [];
+    for (const pattern of genericPatterns) {
+      const matches = Array.from(
+        text.matchAll(new RegExp(pattern.source, pattern.flags)),
+      );
+      for (const m of matches) {
+        const candidate = m[0].trim();
+        const parsed = parseDate(candidate);
+        if (parsed && !foundDates.includes(candidate)) {
+          const yr = parsed.getFullYear();
+          if (yr >= 2000 && yr <= 2040) {
+            foundDates.push(candidate);
+          }
+        }
+      }
+    }
+
+    if (foundDates.length >= 2) {
+      const sorted = foundDates.sort((a, b) => {
+        const da = parseDate(a);
+        const db = parseDate(b);
+        if (!da || !db) return 0;
+        return da.getTime() - db.getTime();
+      });
+      // Smarter assignment: future/closer date = EXP, earlier = MFG
+      const now = new Date();
+      const futureDate = sorted.find((d) => {
+        const p = parseDate(d);
+        return p && p >= now;
+      });
+      const pastDate = sorted.find((d) => {
+        const p = parseDate(d);
+        return p && p < now;
+      });
+      if (manufacturing_date === "Not detected") {
+        manufacturing_date = pastDate || sorted[0];
+      }
+      if (expiry_date === "Not detected") {
+        expiry_date = futureDate || sorted[sorted.length - 1];
+      }
+    } else if (foundDates.length === 1) {
+      if (expiry_date === "Not detected") expiry_date = foundDates[0];
+    }
+  }
+
+  // --- Keyword+date line-by-line fallback ---
+  // Search combinedText line by line for date-like patterns near MFG/EXP keywords
+  if (expiry_date === "Not detected" || manufacturing_date === "Not detected") {
+    const keywordDatePattern =
+      /(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4}|\d{1,2}[\/\-\.]\d{4}|\d{4}[\/\-]\d{1,2}|[A-Za-z]{3,9}\s+\d{4}|[A-Za-z]{3}[\/\-\s]\d{2,4})/;
+    const mfgKeywords =
+      /\b(MFG|MFD|MFGD|DOM|MANUFACTURED|DATE\s+OF\s+MFG|MFD\s+ON|MANUFACTURING)\b/i;
+    const expKeywords =
+      /\b(EXP|EXPIRY|EXPIRATION|USE\s+BEFORE|USE\s+BY|BEST\s+BEFORE|VALID\s+UPTO|VALID\s+TILL|BEFORE)\b/i;
+    for (const line of combinedText.split("\n")) {
+      const l = line.trim();
+      if (!l) continue;
+      const dateMatch = l.match(keywordDatePattern);
+      if (!dateMatch) continue;
+      const candidate = dateMatch[1].trim();
+      const parsed = parseDate(candidate);
+      if (!parsed) continue;
+      const yr = parsed.getFullYear();
+      if (yr < 2000 || yr > 2040) continue;
+      if (manufacturing_date === "Not detected" && mfgKeywords.test(l)) {
+        manufacturing_date = candidate;
+      }
+      if (expiry_date === "Not detected" && expKeywords.test(l)) {
+        expiry_date = candidate;
+      }
+    }
+  }
+
+  // --- Medicine name ---
+  // Use first 15 lines of combinedText (brand names appear near the top of the strip)
+  let medicine_name = "Not detected";
+  const skipPrefixes =
+    /^(MFG|MFD|EXP|BATCH|LOT|B\.NO|B\.N|B NO|MRP|NET|WT|TAB|CAP|INJ|SYRUP|CONTAINS|EACH|STORE|KEEP|DESCRIPTION|MANUFACTURED|MARKETED|FOR|USE|DO\s+NOT|WWW|HTTP|©|CIN|DRUG|REG|LIC|DL|COMPOSITION|INGREDIENTS|DOSAGE|WARNING|CAUTION|SCHEDULE|STRIP|MFGDT|MFDT|DOM|DATE|ADDRESS|DIST|PIN|INDIA|GITS|TABLET|CAPSULE|\d)/i;
+  // Relaxed skipIfContains: removed tablet/capsule/injection/syrup so names like "CROCIN TABLETS" are kept
+  const skipIfContains =
+    /(\d{2}[\/\-]\d{2,4}|www\.|\..com|batch|lot no|b\.no|\brs\b|\bmrp\b|phone|mob|tel:|fax|pvt\.?\s*ltd|pvt ltd|private limited|pharmaceuticals|laboratories|lab\.|pharma ltd|healthcare ltd|industries|village|taluka|nagar|road|street|plot|survey|gujarat|maharashtra|rajasthan|karnataka|hyderabad|mumbai|chennai|delhi|kolkata|bengaluru|ahmedabad|pune|pin code|\bpin\b|hydrochloride|hydrochlorid|sulphate|sulfate|phosphate|maleate|tartrate|citrate|acetate|gluconate|chloride|bromide|mesylate|fumarate|succinate|sodium|potassium|calcium|magnesium|\bsolution\b|\bsuspension\b|\bgel\b|\bcream\b|\bointment\b|\bpowder\b|\%)/i;
+
+  // Search first 15 lines of combinedText for brand name
+  const topLines = combinedText
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .slice(0, 15);
+
+  // First pass: all-caps brand name lines from top of strip
+  for (const line of topLines) {
+    if (line.length < 4 || line.length > 50) continue;
+    if (skipPrefixes.test(line)) continue;
+    if (skipIfContains.test(line)) continue;
+    const isAllCaps = /^[A-Z][A-Z0-9®™\s\-\+\(\)\.]{2,39}$/.test(line);
+    if (isAllCaps) {
+      medicine_name = line;
+      break;
+    }
+  }
+
+  // Second pass: mixed-case brand names from top lines
+  if (medicine_name === "Not detected") {
+    for (const line of topLines) {
+      if (line.length < 4 || line.length > 60) continue;
+      if (skipPrefixes.test(line)) continue;
+      if (skipIfContains.test(line)) continue;
+      const isBrandName =
+        /^[A-Za-z][A-Za-z0-9®™\s\-\+\.\/\(\)]+$/.test(line) &&
+        line.length >= 4 &&
+        line.length <= 60 &&
+        /[A-Za-z]{3,}/.test(line);
+      if (isBrandName) {
+        medicine_name = line;
+        break;
+      }
+    }
+  }
+
+  // Third pass: fall back to all lines (all-caps first)
+  if (medicine_name === "Not detected") {
+    for (const line of lines) {
+      if (line.length < 4 || line.length > 50) continue;
+      if (skipPrefixes.test(line)) continue;
+      if (skipIfContains.test(line)) continue;
+      const isAllCaps = /^[A-Z][A-Z0-9®™\s\-\+\(\)\.]{2,39}$/.test(line);
+      if (isAllCaps) {
+        medicine_name = line;
+        break;
+      }
+    }
+  }
+
+  // Length floor: discard noise
+  if (medicine_name.length < 4) medicine_name = "Not detected";
+
+  console.log("[HealthDoor] Extracted:", {
+    medicine_name,
+    manufacturing_date,
+    expiry_date,
+  });
+
+  return { medicine_name, manufacturing_date, expiry_date };
+}
+
 function getExpiryStatus(expiryDate: string): "valid" | "expired" | "unknown" {
   if (!expiryDate || expiryDate === "Not detected") return "unknown";
   let parsedDate: Date | null = null;
 
   const mmYYYY = expiryDate.match(/(\d{2})\/(\d{4})/);
   const mmYY = expiryDate.match(/(\d{2})\/(\d{2})$/);
-  const monYYYY = expiryDate.match(/([A-Za-z]{3})\s*(\d{4})/);
+  const monYYYY = expiryDate.match(/([A-Za-z]{3,9})\s*(\d{4})/);
+  const ddMMYYYY = expiryDate.match(
+    /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/,
+  );
 
-  if (mmYYYY) {
+  if (ddMMYYYY) {
+    parsedDate = new Date(
+      Number.parseInt(ddMMYYYY[3]),
+      Number.parseInt(ddMMYYYY[2]) - 1,
+      Number.parseInt(ddMMYYYY[1]),
+    );
+  } else if (mmYYYY) {
     parsedDate = new Date(
       Number.parseInt(mmYYYY[2]),
       Number.parseInt(mmYYYY[1]) - 1,
@@ -89,63 +729,6 @@ function getExpiryStatus(expiryDate: string): "valid" | "expired" | "unknown" {
   return endOfMonth >= new Date() ? "valid" : "expired";
 }
 
-function imageToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      resolve(result.split(",")[1]);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function analyzeImage(
-  apiKey: string,
-  base64: string,
-  mimeType: string,
-): Promise<ScanResult> {
-  const prompt = `You are an OCR system for medicine strips. Analyze this image and extract: medicine name, manufacturing date (MFG/MFD), and expiry date (EXP/USE BEFORE). Return ONLY valid JSON: {"medicine_name": "...", "manufacturing_date": "...", "expiry_date": "..."}. If a value cannot be clearly read, use "Not detected". Never guess or fabricate. If image quality is too poor, return {"error": "Image quality is too poor. Please upload a clearer image focusing on the medicine strip."}. Do not include markdown code fences or any text outside the JSON object.`;
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              { inline_data: { mime_type: mimeType, data: base64 } },
-            ],
-          },
-        ],
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    if (response.status === 400 || response.status === 403) {
-      throw new Error(
-        "Invalid API key. Please check your Gemini API key in settings.",
-      );
-    }
-    throw new Error(err?.error?.message || `API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  const clean = text.replace(/```[a-z]*\n?/gi, "").trim();
-  try {
-    return JSON.parse(clean);
-  } catch {
-    throw new Error("Failed to parse AI response. Please try again.");
-  }
-}
-
 function loadHistory(): HistoryItem[] {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY_HISTORY) || "[]");
@@ -159,6 +742,32 @@ function saveHistory(items: HistoryItem[]) {
     STORAGE_KEY_HISTORY,
     JSON.stringify(items.slice(0, MAX_HISTORY)),
   );
+}
+
+// ------- Voice helper (multi-language) -------
+function speakResult(
+  result: ScanResult,
+  lang = "en-US",
+): SpeechSynthesisUtterance | null {
+  if (!window.speechSynthesis) return null;
+  const tpl = LANG_TEMPLATES[lang] || LANG_TEMPLATES["en-US"];
+  const status = getExpiryStatus(result.expiry_date);
+  const statusText =
+    status === "valid"
+      ? tpl.valid
+      : status === "expired"
+        ? tpl.expired
+        : tpl.unknown;
+  const mfg = formatDateDisplay(result.manufacturing_date) || tpl.unknown;
+  const exp = formatDateDisplay(result.expiry_date) || tpl.unknown;
+  const name = result.medicine_name || tpl.unknown;
+  const text = `${tpl.medicine}: ${name}. ${tpl.mfg}: ${mfg}. ${tpl.exp}: ${exp}. ${tpl.status}: ${statusText}.`;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = lang;
+  utterance.rate = 0.92;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+  return utterance;
 }
 
 // ------- StatusBadge -------
@@ -185,8 +794,62 @@ function StatusBadge({ status }: { status: "valid" | "expired" | "unknown" }) {
 }
 
 // ------- ResultCard -------
-function ResultCard({ result }: { result: ScanResult }) {
+function ResultCard({
+  result,
+  autoSpeak,
+  voiceLang,
+}: {
+  result: ScanResult;
+  autoSpeak?: boolean;
+  voiceLang?: string;
+}) {
   const status = getExpiryStatus(result.expiry_date);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const hasSpeechSupport =
+    typeof window !== "undefined" && !!window.speechSynthesis;
+
+  const resultRef = useRef(result);
+  const autoSpeakRef = useRef(autoSpeak);
+  const langRef = useRef(voiceLang || "en-US");
+
+  // sync lang ref
+  useEffect(() => {
+    langRef.current = voiceLang || "en-US";
+  }, [voiceLang]);
+
+  // Auto-speak once when the card first mounts
+  useEffect(() => {
+    if (!autoSpeakRef.current || !window.speechSynthesis) return;
+    const utterance = speakResult(resultRef.current, langRef.current);
+    if (utterance) {
+      setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+    }
+  }, []);
+
+  // Cancel speech on unmount
+  useEffect(() => {
+    return () => {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+    };
+  }, []);
+
+  const handleVoice = () => {
+    if (!hasSpeechSupport) return;
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+    const utterance = speakResult(result, langRef.current);
+    if (utterance) {
+      setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -203,7 +866,28 @@ function ResultCard({ result }: { result: ScanResult }) {
             Medicine
           </span>
         </div>
-        <StatusBadge status={status} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={status} />
+          {hasSpeechSupport && (
+            <button
+              type="button"
+              data-ocid="result.toggle"
+              onClick={handleVoice}
+              title={isSpeaking ? "Stop listening" : "Listen to result"}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                isSpeaking
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
+              }`}
+            >
+              {isSpeaking ? (
+                <VolumeX className="w-4 h-4" />
+              ) : (
+                <Volume2 className="w-4 h-4" />
+              )}
+            </button>
+          )}
+        </div>
       </div>
       <p className="text-xl font-bold text-foreground mb-5 leading-tight">
         {result.medicine_name || "Not detected"}
@@ -217,7 +901,7 @@ function ResultCard({ result }: { result: ScanResult }) {
             </span>
           </div>
           <p className="text-sm font-semibold text-foreground">
-            {result.manufacturing_date || "Not detected"}
+            {formatDateDisplay(result.manufacturing_date) || "Not detected"}
           </p>
         </div>
         <div className="bg-muted/60 rounded-xl p-3">
@@ -236,7 +920,7 @@ function ResultCard({ result }: { result: ScanResult }) {
                   : "text-foreground"
             }`}
           >
-            {result.expiry_date || "Not detected"}
+            {formatDateDisplay(result.expiry_date) || "Not detected"}
           </p>
         </div>
       </div>
@@ -265,7 +949,7 @@ function HistoryCard({ item, index }: { item: HistoryItem; index: number }) {
           {item.result.medicine_name || "Unknown"}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          EXP: {item.result.expiry_date || "N/A"}
+          EXP: {formatDateDisplay(item.result.expiry_date) || "N/A"}
         </p>
         <div className="mt-2">
           <StatusBadge status={status} />
@@ -346,31 +1030,74 @@ function AuthButton() {
   );
 }
 
+// ------- Language Selector -------
+function LanguageSelector({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (lang: string) => void;
+}) {
+  const selected = LANGUAGES.find((l) => l.code === value) || LANGUAGES[0];
+  return (
+    <div className="flex items-center gap-1">
+      <span className="text-base">{selected.flag}</span>
+      <select
+        data-ocid="voice.select"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="text-xs font-medium bg-transparent border border-border rounded-md px-1.5 py-1 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary hover:border-primary/50 transition-colors"
+        title="Select language for voice"
+      >
+        {LANGUAGES.map((l) => (
+          <option key={l.code} value={l.code}>
+            {l.flag} {l.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 // ------- Main App -------
 export default function App() {
   const { identity } = useInternetIdentity();
   const { actor } = useActor();
   const isLoggedIn = !!identity && !identity.getPrincipal().isAnonymous();
 
-  const [apiKey, setApiKey] = useState(
-    () => localStorage.getItem(STORAGE_KEY_API) || "",
-  );
-  const [keyInput, setKeyInput] = useState("");
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [showKey, setShowKey] = useState(false);
-
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
+  const [autoSpeak, setAutoSpeak] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>(loadHistory);
   const [loadingBackendHistory, setLoadingBackendHistory] = useState(false);
 
+  // Voice state
+  const [voiceLang, setVoiceLang] = useState("en-US");
+  const [isListening, setIsListening] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState("");
+  const recognitionRef = useRef<any>(null);
+
+  const hasSpeechRecognition =
+    typeof window !== "undefined" &&
+    !!(
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition
+    );
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const uploadSectionRef = useRef<HTMLDivElement>(null);
+  const selectedFileRef = useRef<File | null>(null);
+  const handleAnalyzeRef = useRef<() => void>(() => {});
+
+  // Keep selectedFileRef in sync
+  useEffect(() => {
+    selectedFileRef.current = selectedFile;
+  }, [selectedFile]);
 
   // Load scan history from backend when logged in
   useEffect(() => {
@@ -391,20 +1118,16 @@ export default function App() {
         }));
         setHistory(backendItems.slice(0, MAX_HISTORY));
       })
-      .catch(() => {
-        // silently fall back to local history
-      })
+      .catch(() => {})
       .finally(() => setLoadingBackendHistory(false));
   }, [isLoggedIn, actor]);
 
-  // When user logs out, reload from localStorage
   useEffect(() => {
     if (!isLoggedIn) {
       setHistory(loadHistory());
     }
   }, [isLoggedIn]);
 
-  // Cleanup preview URL on unmount or change
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -422,7 +1145,9 @@ export default function App() {
       setSelectedFile(file);
       setPreviewUrl(url);
       setResult(null);
+      setAutoSpeak(false);
       setErrorMsg(null);
+      setVoiceTranscript("");
     },
     [previewUrl],
   );
@@ -448,71 +1173,148 @@ export default function App() {
 
   const handleAnalyze = useCallback(async () => {
     if (!selectedFile) return;
-    if (!apiKey) {
-      setSettingsOpen(true);
-      toast.error("Please add your Gemini API key first.");
-      return;
-    }
     setAnalyzing(true);
     setErrorMsg(null);
     setResult(null);
+    setAutoSpeak(false);
+
+    let worker: any = null;
     try {
-      const base64 = await imageToBase64(selectedFile);
-      const res = await analyzeImage(
-        apiKey,
-        base64,
-        selectedFile.type || "image/jpeg",
-      );
-      if (res.error) {
-        setErrorMsg(res.error);
-      } else {
-        setResult(res);
-        const item: HistoryItem = {
-          id: crypto.randomUUID(),
-          timestamp: Date.now(),
-          result: res,
-          imageUrl: previewUrl!,
-        };
-        const newHistory = [item, ...history].slice(0, MAX_HISTORY);
-        setHistory(newHistory);
+      const { sharpCanvas, binCanvas } = await preprocessImage(selectedFile);
 
-        if (isLoggedIn && actor) {
-          actor
-            .saveScan(
-              res.medicine_name || "",
-              res.manufacturing_date || "",
-              res.expiry_date || "",
-              previewUrl || "",
-            )
-            .catch(() => {
-              // silently handle
-            });
-        } else {
-          saveHistory(newHistory);
-        }
+      worker = await Tesseract.createWorker("eng");
 
-        toast.success("Analysis complete!");
+      // Run PSM modes on sharpCanvas (no binarization — better for foil/light backgrounds)
+      const sharpPsmModes = [3, 6, 11];
+      // Run PSM modes on binCanvas (binarized — better for clean printed text)
+      const binPsmModes = [3, 6];
+
+      const allTexts: string[] = [];
+      for (const psm of sharpPsmModes) {
+        await worker.setParameters({ tessedit_pageseg_mode: psm });
+        const res = await worker.recognize(sharpCanvas);
+        const t = (res.data.text || "").trim();
+        if (t) allTexts.push(t);
       }
+      for (const psm of binPsmModes) {
+        await worker.setParameters({ tessedit_pageseg_mode: psm });
+        const res = await worker.recognize(binCanvas);
+        const t = (res.data.text || "").trim();
+        if (t) allTexts.push(t);
+      }
+
+      // Combine all unique lines from all PSM outputs
+      const lineSet = new Set<string>();
+      for (const t of allTexts) {
+        for (const line of t.split("\n")) {
+          const trimmed = line.trim();
+          if (trimmed) lineSet.add(trimmed);
+        }
+      }
+      // Also keep the longest single block for context-sensitive patterns
+      const longestText = allTexts.reduce(
+        (a, b) => (b.length > a.length ? b : a),
+        "",
+      );
+      const combinedText = `${longestText}
+${Array.from(lineSet).join("\n")}`;
+
+      console.log("[HealthDoor] OCR combined text:", combinedText);
+
+      if (!combinedText || combinedText.trim().length < 5) {
+        throw new Error(
+          "Could not read text from image. Please use a clearer, well-lit photo where the text on the strip is sharp.",
+        );
+      }
+
+      const res = extractMedicineData(longestText, combinedText);
+      setResult(res);
+      setAutoSpeak(true);
+
+      const item: HistoryItem = {
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        result: res,
+        imageUrl: previewUrl!,
+      };
+      const newHistory = [item, ...history].slice(0, MAX_HISTORY);
+      setHistory(newHistory);
+
+      if (isLoggedIn && actor) {
+        actor
+          .saveScan(
+            res.medicine_name || "",
+            res.manufacturing_date || "",
+            res.expiry_date || "",
+            previewUrl || "",
+          )
+          .catch(() => {});
+      } else {
+        saveHistory(newHistory);
+      }
+
+      toast.success("Analysis complete!");
     } catch (err: any) {
       setErrorMsg(err?.message || "Something went wrong. Please try again.");
     } finally {
+      if (worker) await worker.terminate();
       setAnalyzing(false);
     }
-  }, [selectedFile, apiKey, previewUrl, history, isLoggedIn, actor]);
+  }, [selectedFile, actor, previewUrl, history, isLoggedIn]);
 
-  const handleSaveKey = () => {
-    const trimmed = keyInput.trim();
-    if (!trimmed) {
-      toast.error("API key cannot be empty.");
-      return;
-    }
-    localStorage.setItem(STORAGE_KEY_API, trimmed);
-    setApiKey(trimmed);
-    setKeyInput("");
-    setShowKey(false);
-    setSettingsOpen(false);
-    toast.success("Health_Key saved!");
+  // Keep handleAnalyzeRef in sync for use inside recognition callback
+  useEffect(() => {
+    handleAnalyzeRef.current = handleAnalyze;
+  }, [handleAnalyze]);
+
+  // Voice commands (STT trigger words per language)
+  const triggerWords: Record<string, string[]> = {
+    "en-US": ["scan", "analyze", "check", "read"],
+    "hi-IN": ["स्कैन", "जांच", "पढ़ो"],
+    "es-ES": ["escanear", "analizar", "verificar"],
+    "fr-FR": ["scanner", "analyser", "vérifier"],
+    "ar-SA": ["مسح", "تحليل", "فحص"],
+    "zh-CN": ["扫描", "分析", "检查"],
+    "de-DE": ["scannen", "analysieren", "prüfen"],
+    "pt-BR": ["escanear", "analisar", "verificar"],
+    "ru-RU": ["сканировать", "анализировать", "проверить"],
+    "ja-JP": ["スキャン", "分析", "確認"],
+    "ta-IN": ["ஸ்கேன்", "பகுப்பாய்வு", "சரிபார்"],
+    "ur-PK": ["اسکین", "تجزیہ", "جانچ"],
+    "te-IN": ["స్కాన్", "విశ్లేషించు", "తనిఖీ"],
   };
+
+  const startListening = useCallback(() => {
+    if (!hasSpeechRecognition) return;
+    const SpeechRec =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRec();
+    recognition.lang = voiceLang;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setVoiceTranscript(transcript);
+      // Check for voice commands
+      const words = triggerWords[voiceLang] || triggerWords["en-US"];
+      const lower = transcript.toLowerCase();
+      const isCommand = words.some((w) => lower.includes(w.toLowerCase()));
+      if (isCommand && selectedFileRef.current) {
+        handleAnalyzeRef.current();
+      }
+    };
+    recognitionRef.current = recognition;
+    recognition.start();
+  }, [hasSpeechRecognition, voiceLang]);
+
+  const stopListening = useCallback(() => {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  }, []);
 
   const scrollToUpload = () => {
     uploadSectionRef.current?.scrollIntoView({
@@ -530,71 +1332,22 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Brand */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <ShieldCheck className="w-4.5 h-4.5 text-primary-foreground" />
-            </div>
+            <img
+              src="/assets/uploads/app_logo-019d385e-4c6a-772e-8e2c-5476cd4d4335-1.png"
+              alt="Health Door Logo"
+              className="w-10 h-10 rounded-xl object-cover"
+            />
             <span className="text-lg font-bold text-foreground tracking-tight">
               Health Door
             </span>
           </div>
           {/* Right actions */}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              data-ocid="header.settings_button"
-              onClick={() => {
-                setKeyInput(apiKey);
-                setShowKey(false);
-                setSettingsOpen(true);
-              }}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="Settings"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
+            <LanguageSelector value={voiceLang} onChange={setVoiceLang} />
             <AuthButton />
           </div>
         </div>
       </header>
-
-      {/* ---- API KEY BANNER ---- */}
-      <AnimatePresence>
-        {!apiKey && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="bg-amber-50 border-b border-amber-200 dark:bg-amber-950/30 dark:border-amber-800/50"
-          >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm">🔑</span>
-                </div>
-                <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
-                  <span className="font-semibold">Setup required:</span> To
-                  start scanning, you need a free Gemini API key.{" "}
-                  <span className="hidden sm:inline text-amber-600 dark:text-amber-300">
-                    It's free and takes 1 minute to set up.
-                  </span>
-                </p>
-              </div>
-              <button
-                type="button"
-                data-ocid="banner.open_modal_button"
-                onClick={() => {
-                  setKeyInput("");
-                  setShowKey(false);
-                  setSettingsOpen(true);
-                }}
-                className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
-              >
-                Set Up Now →
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <main className="flex-1">
         {/* ---- HERO ---- */}
@@ -611,13 +1364,13 @@ export default function App() {
                   AI-Powered Medicine Scanner
                 </Badge>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground leading-[1.1] tracking-tight mb-5">
-                  Know What You're
+                  Know What You&apos;re
                   <span className="text-primary"> Taking.</span>
                 </h1>
                 <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-lg">
-                  Upload a photo of any medicine strip. Our AI instantly
-                  extracts the medicine name, manufacturing date, and expiry
-                  status — so you never take an expired medicine again.
+                  Upload a photo of any medicine strip. It instantly extracts
+                  the medicine name, manufacturing date, and expiry status — all
+                  processed locally on your device, no account needed.
                 </p>
                 <div className="flex items-center gap-3">
                   <Button
@@ -647,8 +1400,8 @@ export default function App() {
                     results
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="w-4 h-4 text-success" />{" "}
-                    Privacy-first
+                    <CheckCircle2 className="w-4 h-4 text-success" /> 100%
+                    Private
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <CheckCircle2 className="w-4 h-4 text-success" /> Free to
@@ -670,7 +1423,6 @@ export default function App() {
                     alt="Medicine strip scan"
                     className="relative rounded-2xl shadow-card-hover w-full max-w-md rotate-3 hover:rotate-1 transition-transform duration-500"
                   />
-                  {/* floating badge */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -685,7 +1437,7 @@ export default function App() {
                         Valid
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        EXP: 03/2026
+                        EXP: March 2026
                       </p>
                     </div>
                   </motion.div>
@@ -709,8 +1461,8 @@ export default function App() {
                 Upload & Scan Medicine
               </h2>
               <p className="text-muted-foreground mb-6 text-sm">
-                Drag a photo or use your camera to extract medicine details
-                instantly.
+                Drag a photo or use your camera — OCR reads the strip labels
+                directly on your device, no cloud, no API keys.
               </p>
 
               {/* Dropzone */}
@@ -744,6 +1496,7 @@ export default function App() {
                           setPreviewUrl(null);
                           setResult(null);
                           setErrorMsg(null);
+                          setVoiceTranscript("");
                         }}
                         className="absolute top-6 right-6 z-10 w-7 h-7 rounded-full bg-foreground/80 text-background flex items-center justify-center hover:bg-foreground transition-colors"
                         aria-label="Remove image"
@@ -775,7 +1528,7 @@ export default function App() {
                           PNG, JPG, WEBP supported
                         </p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-wrap justify-center">
                         <button
                           type="button"
                           data-ocid="upload.upload_button"
@@ -795,11 +1548,62 @@ export default function App() {
                         >
                           <Camera className="w-4 h-4" /> Scan with Camera
                         </button>
+                        {hasSpeechRecognition && (
+                          <button
+                            type="button"
+                            data-ocid="voice.upload_button"
+                            onClick={
+                              isListening ? stopListening : startListening
+                            }
+                            title={
+                              isListening
+                                ? "Stop listening"
+                                : "Speak a command (e.g. 'scan')"
+                            }
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                              isListening
+                                ? "bg-destructive text-destructive-foreground animate-pulse"
+                                : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                            }`}
+                          >
+                            {isListening ? (
+                              <MicOff className="w-4 h-4" />
+                            ) : (
+                              <Mic className="w-4 h-4" />
+                            )}
+                            {isListening ? "Listening..." : "Voice"}
+                          </button>
+                        )}
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Voice transcript display */}
+              <AnimatePresence>
+                {(isListening || voiceTranscript) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="mt-3 flex items-start gap-2 bg-muted/60 rounded-lg px-3 py-2"
+                  >
+                    <Mic
+                      className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
+                        isListening
+                          ? "text-destructive animate-pulse"
+                          : "text-muted-foreground"
+                      }`}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {isListening && !voiceTranscript
+                        ? 'Listening… say a command like "scan"'
+                        : voiceTranscript || ""}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Hidden inputs */}
               <input
@@ -833,8 +1637,8 @@ export default function App() {
                   >
                     {analyzing ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" />{" "}
-                        Analyzing...
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Reading medicine strip...
                       </>
                     ) : (
                       <>
@@ -855,10 +1659,11 @@ export default function App() {
                   <Loader2 className="w-5 h-5 animate-spin text-primary flex-shrink-0" />
                   <div>
                     <p className="text-sm font-semibold text-foreground">
-                      AI is analyzing your image...
+                      Analyzing medicine strip...
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      This usually takes 2–5 seconds
+                      Processing image on your device — first scan loads OCR
+                      engine (~10MB, cached after)
                     </p>
                   </div>
                 </div>
@@ -880,7 +1685,7 @@ export default function App() {
                         Analysis Failed
                       </p>
                       <p className="text-xs text-destructive/80 mt-0.5">
-                        {errorMsg}
+                        {String(errorMsg ?? "")}
                       </p>
                     </div>
                     <button
@@ -894,35 +1699,6 @@ export default function App() {
                   </motion.div>
                 )}
               </AnimatePresence>
-
-              {/* Gemini API key settings */}
-              <div className="mt-6 pt-5 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Health_Key (API Key)
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {apiKey
-                        ? `Key set: ${apiKey.slice(0, 8)}...`
-                        : "No key configured"}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    data-ocid="upload.settings_button"
-                    onClick={() => {
-                      setKeyInput(apiKey);
-                      setShowKey(false);
-                      setSettingsOpen(true);
-                    }}
-                    className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
-                  >
-                    <Settings className="w-3.5 h-3.5" />{" "}
-                    {apiKey ? "Update" : "Add Key"}
-                  </button>
-                </div>
-              </div>
             </motion.div>
           </div>
         </section>
@@ -940,7 +1716,11 @@ export default function App() {
                 <h2 className="text-xl font-bold text-foreground mb-4">
                   Scan Results
                 </h2>
-                <ResultCard result={result} />
+                <ResultCard
+                  result={result}
+                  autoSpeak={autoSpeak}
+                  voiceLang={voiceLang}
+                />
               </div>
             </motion.section>
           )}
@@ -1009,7 +1789,8 @@ export default function App() {
                 How It Works
               </h2>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                Three simple steps to verify your medicine's safety in seconds.
+                Three simple steps to verify your medicine&apos;s safety in
+                seconds.
               </p>
             </motion.div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1023,14 +1804,14 @@ export default function App() {
                 {
                   icon: <FlaskConical className="w-6 h-6 text-primary" />,
                   step: "02",
-                  title: "AI Analysis",
-                  desc: "Google Gemini Vision AI reads the strip text, identifies the medicine name, MFG date, and expiry date.",
+                  title: "Smart OCR Analysis",
+                  desc: "Advanced text recognition reads the strip labels directly in your browser — no cloud, no API keys, completely private.",
                 },
                 {
                   icon: <ShieldCheck className="w-6 h-6 text-primary" />,
                   step: "03",
                   title: "Review Results",
-                  desc: "Instantly see if your medicine is valid or expired, with clearly structured extracted data.",
+                  desc: "Instantly see if your medicine is valid or expired, with clearly structured extracted data — and hear it spoken aloud in your language.",
                 },
               ].map((item, i) => (
                 <motion.div
@@ -1094,156 +1875,6 @@ export default function App() {
           </div>
         </div>
       </footer>
-
-      {/* ---- SETTINGS DIALOG ---- */}
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent data-ocid="settings.dialog" className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Settings className="w-4.5 h-4.5 text-primary" />
-              Setup Your Health_Key (API Key)
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="py-2 space-y-5">
-            {/* Step-by-step guide */}
-            <div className="bg-muted/50 rounded-xl p-4 space-y-3">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
-                How to get your free API key:
-              </p>
-
-              {/* Step 1 */}
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-xs font-bold text-primary-foreground">
-                    1
-                  </span>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">
-                    Go to Google AI Studio
-                  </p>
-                  <a
-                    href="https://aistudio.google.com/app/apikey"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 mt-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors"
-                  >
-                    Open Google AI Studio →
-                  </a>
-                </div>
-              </div>
-
-              {/* Step 2 */}
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-xs font-bold text-primary">2</span>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    Sign in with your Google account
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Use any Gmail or Google account — it's free.
-                  </p>
-                </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-xs font-bold text-primary">3</span>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    Click "Create API key" and copy it
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    The key starts with{" "}
-                    <span className="font-mono bg-muted px-1 rounded">
-                      AIza
-                    </span>
-                  </p>
-                </div>
-              </div>
-
-              {/* Step 4 */}
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-xs font-bold text-primary">4</span>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    Paste the key below and click Save
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Key input */}
-            <div className="space-y-1.5">
-              <label
-                className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
-                htmlFor="api-key-input"
-              >
-                Paste your Health_Key here
-              </label>
-              <div className="relative">
-                <Input
-                  data-ocid="settings.input"
-                  id="api-key-input"
-                  type={showKey ? "text" : "password"}
-                  placeholder="AIza..."
-                  value={keyInput}
-                  onChange={(e) => setKeyInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSaveKey()}
-                  className="font-mono text-sm pr-10"
-                />
-                <button
-                  type="button"
-                  data-ocid="settings.toggle"
-                  onClick={() => setShowKey((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showKey ? "Hide key" : "Show key"}
-                >
-                  {showKey ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-              {apiKey && (
-                <p className="text-xs text-muted-foreground">
-                  Current key:{" "}
-                  <span className="font-mono">{apiKey.slice(0, 12)}...</span>
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                🔒 Your key is stored only in your browser and never sent to our
-                servers.
-              </p>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2">
-            <Button
-              data-ocid="settings.cancel_button"
-              variant="outline"
-              onClick={() => setSettingsOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              data-ocid="settings.save_button"
-              onClick={handleSaveKey}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              Save Health_Key
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -23,6 +23,7 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
+    analyzeImage(base64Data: string, mimeType: string): Promise<string>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
