@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import {
   AlertCircle,
   AlertTriangle,
+  Ban,
   BookOpen,
   CalendarDays,
   Camera,
@@ -47,6 +48,7 @@ interface ScanResult {
   side_effects?: string;
   warnings?: string;
   drug_class?: string;
+  wrong_use?: string;
 }
 
 interface HistoryItem {
@@ -86,6 +88,7 @@ interface LangTemplate {
   recentScans: string;
   wantScanAnother: string;
   tapBelow: string;
+  wrongUse: string;
 }
 
 // ------- Multi-language templates -------
@@ -120,6 +123,7 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     recentScans: "Recent Scans",
     wantScanAnother: "Want to scan another medicine?",
     tapBelow: "Tap the button below to start a new scan",
+    wrongUse: "Wrong Use / Contraindications",
   },
   "hi-IN": {
     medicine: "दवा",
@@ -151,6 +155,7 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     recentScans: "हाल के स्कैन",
     wantScanAnother: "क्या आप और दवा स्कैन करना चाहते हैं?",
     tapBelow: "नया स्कैन शुरू करने के लिए नीचे बटन दबाएं",
+    wrongUse: "गलत उपयोग / मतभेद",
   },
   "es-ES": {
     medicine: "Medicamento",
@@ -182,6 +187,7 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     recentScans: "Escaneos recientes",
     wantScanAnother: "¿Quieres escanear otro medicamento?",
     tapBelow: "Toca el botón de abajo para iniciar un nuevo escaneo",
+    wrongUse: "Uso Incorrecto / Contraindicaciones",
   },
   "fr-FR": {
     medicine: "Médicament",
@@ -213,6 +219,7 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     recentScans: "Scans récents",
     wantScanAnother: "Voulez-vous scanner un autre médicament?",
     tapBelow: "Appuyez sur le bouton ci-dessous pour commencer un nouveau scan",
+    wrongUse: "Mauvaise Utilisation / Contre-indications",
   },
   "ar-SA": {
     medicine: "دواء",
@@ -244,6 +251,7 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     recentScans: "عمليات المسح الأخيرة",
     wantScanAnother: "هل تريد مسح دواء آخر؟",
     tapBelow: "اضغط الزر أدناه لبدء مسح جديد",
+    wrongUse: "الاستخدام الخاطئ / موانع الاستعمال",
   },
   "zh-CN": {
     medicine: "药品",
@@ -275,6 +283,7 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     recentScans: "最近扫描",
     wantScanAnother: "要扫描另一种药物吗？",
     tapBelow: "点击下方按钮开始新扫描",
+    wrongUse: "错误使用 / 禁忌症",
   },
   "de-DE": {
     medicine: "Medikament",
@@ -307,6 +316,7 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     wantScanAnother: "Möchten Sie ein weiteres Medikament scannen?",
     tapBelow:
       "Tippen Sie auf die Schaltfläche unten, um einen neuen Scan zu starten",
+    wrongUse: "Falsche Anwendung / Kontraindikationen",
   },
   "pt-BR": {
     medicine: "Medicamento",
@@ -338,6 +348,7 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     recentScans: "Scans recentes",
     wantScanAnother: "Deseja escanear outro medicamento?",
     tapBelow: "Toque no botão abaixo para iniciar um novo scan",
+    wrongUse: "Uso Incorreto / Contraindicações",
   },
   "ru-RU": {
     medicine: "Лекарство",
@@ -369,6 +380,7 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     recentScans: "Недавние сканирования",
     wantScanAnother: "Хотите сканировать другое лекарство?",
     tapBelow: "Нажмите кнопку ниже, чтобы начать новое сканирование",
+    wrongUse: "Неправильное применение / Противопоказания",
   },
   "ja-JP": {
     medicine: "薬",
@@ -400,6 +412,7 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     recentScans: "最近のスキャン",
     wantScanAnother: "別の薬をスキャンしますか？",
     tapBelow: "新しいスキャンを開始するには下のボタンをタップ",
+    wrongUse: "誤った使用法 / 禁忌",
   },
   "ta-IN": {
     medicine: "மருந்து",
@@ -431,6 +444,7 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     recentScans: "சமீபத்திய ஸ்கேன்கள்",
     wantScanAnother: "மற்றொரு மருந்து ஸ்கேன் செய்ய விரும்புகிறீர்களா?",
     tapBelow: "புதிய ஸ்கேன் தொடங்க கீழே உள்ள பொத்தானை அழுத்துங்கள்",
+    wrongUse: "தவறான பயன்பாடு / முரண்பாடுகள்",
   },
   "ur-PK": {
     medicine: "دوا",
@@ -462,6 +476,7 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     recentScans: "حالیہ اسکینز",
     wantScanAnother: "کیا آپ دوسری دوا اسکین کرنا چاہتے ہیں؟",
     tapBelow: "نیا اسکین شروع کرنے کے لیے نیچے بٹن دبائیں",
+    wrongUse: "غلط استعمال / ممانعت",
   },
   "te-IN": {
     medicine: "మందు",
@@ -493,6 +508,7 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     recentScans: "ఇటీవలి స్కాన్‌లు",
     wantScanAnother: "మరొక మందు స్కాన్ చేయాలనుకుంటున్నారా?",
     tapBelow: "కొత్త స్కాన్ ప్రారంభించడానికి దిగువ బటన్ నొక్కండి",
+    wrongUse: "తప్పుడు వాడుక / విరుద్ధ సంకేతాలు",
   },
 };
 
@@ -1223,7 +1239,8 @@ function speakResult(
   if (result.how_to_use) parts.push(`${tpl.howToUse}: ${result.how_to_use}.`);
   if (result.side_effects)
     parts.push(`${tpl.sideEffects}: ${result.side_effects}.`);
-  if (result.warnings) parts.push(`${tpl.warnings}: ${result.warnings}.`);
+  if (result.warnings) parts.push(`${tpl.warnings}: ${result.warnings}`);
+  if (result.wrong_use) parts.push(`${tpl.wrongUse}: ${result.wrong_use}`);
 
   const text = parts.join(" ");
 
@@ -1301,6 +1318,7 @@ async function fetchMedicineInfo(medicineName: string): Promise<{
   side_effects: string;
   warnings: string;
   drug_class: string;
+  wrong_use: string;
 }> {
   if (!medicineName || medicineName === "Not detected")
     return {
@@ -1309,6 +1327,7 @@ async function fetchMedicineInfo(medicineName: string): Promise<{
       side_effects: "",
       warnings: "",
       drug_class: "",
+      wrong_use: "",
     };
   try {
     const encoded = encodeURIComponent(medicineName);
@@ -1340,8 +1359,26 @@ async function fetchMedicineInfo(medicineName: string): Promise<{
           result.openfda?.pharm_class_epc?.[0] ||
           result.openfda?.product_type?.[0] ||
           "";
-        if (used_for || how_to_use || side_effects || warnings || drug_class)
-          return { how_to_use, used_for, side_effects, warnings, drug_class };
+        const contraindicationsRaw = result.contraindications?.[0] || "";
+        const wrong_use =
+          contraindicationsRaw.slice(0, 400) +
+          (contraindicationsRaw.length > 400 ? "..." : "");
+        if (
+          used_for ||
+          how_to_use ||
+          side_effects ||
+          warnings ||
+          drug_class ||
+          wrong_use
+        )
+          return {
+            how_to_use,
+            used_for,
+            side_effects,
+            warnings,
+            drug_class,
+            wrong_use,
+          };
       }
     }
     // Fallback: Wikipedia search for broader medicine coverage (Indian & global brands)
@@ -1354,6 +1391,7 @@ async function fetchMedicineInfo(medicineName: string): Promise<{
         side_effects: "",
         warnings: "",
         drug_class: "",
+        wrong_use: "",
       };
     const searchData = await searchResp.json();
     const pageTitle = searchData?.query?.search?.[0]?.title;
@@ -1364,6 +1402,7 @@ async function fetchMedicineInfo(medicineName: string): Promise<{
         side_effects: "",
         warnings: "",
         drug_class: "",
+        wrong_use: "",
       };
     const summaryResp = await fetch(
       `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`,
@@ -1375,6 +1414,7 @@ async function fetchMedicineInfo(medicineName: string): Promise<{
         side_effects: "",
         warnings: "",
         drug_class: "",
+        wrong_use: "",
       };
     const summaryData = await summaryResp.json();
     const extract = summaryData?.extract || "";
@@ -1385,6 +1425,7 @@ async function fetchMedicineInfo(medicineName: string): Promise<{
         side_effects: "",
         warnings: "",
         drug_class: "",
+        wrong_use: "",
       };
     // Use the first 500 chars of the Wikipedia summary as "used_for"
     const used_for =
@@ -1395,6 +1436,7 @@ async function fetchMedicineInfo(medicineName: string): Promise<{
       side_effects: "",
       warnings: "",
       drug_class: "",
+      wrong_use: "",
     };
   } catch {
     return {
@@ -1403,6 +1445,7 @@ async function fetchMedicineInfo(medicineName: string): Promise<{
       side_effects: "",
       warnings: "",
       drug_class: "",
+      wrong_use: "",
     };
   }
 }
@@ -1629,6 +1672,19 @@ function ResultCard({
           </div>
           <p className="text-sm text-foreground leading-relaxed">
             {result.warnings}
+          </p>
+        </div>
+      )}
+      {result.wrong_use && (
+        <div className="mt-4 border-t border-border pt-3">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Ban className="w-3.5 h-3.5 text-red-600" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {tpl.wrongUse}
+            </span>
+          </div>
+          <p className="text-sm text-foreground leading-relaxed">
+            {result.wrong_use}
           </p>
         </div>
       )}
@@ -1983,6 +2039,7 @@ export default function App() {
         translatedHowToUse,
         translatedSideEffects,
         translatedWarnings,
+        translatedWrongUse,
       ] = await Promise.all([
         isoLang !== "en" && medicineInfo.used_for
           ? translateText(medicineInfo.used_for, isoLang)
@@ -1996,6 +2053,9 @@ export default function App() {
         isoLang !== "en" && medicineInfo.warnings
           ? translateText(medicineInfo.warnings, isoLang)
           : Promise.resolve(medicineInfo.warnings),
+        isoLang !== "en" && medicineInfo.wrong_use
+          ? translateText(medicineInfo.wrong_use, isoLang)
+          : Promise.resolve(medicineInfo.wrong_use),
       ]);
       const resWithUsage: ScanResult = {
         ...res,
@@ -2004,6 +2064,7 @@ export default function App() {
         side_effects: translatedSideEffects,
         warnings: translatedWarnings,
         drug_class: medicineInfo.drug_class,
+        wrong_use: translatedWrongUse,
       };
       setResult(resWithUsage);
       setAutoSpeak(true);
