@@ -1404,9 +1404,15 @@ async function fetchMedicineInfo(medicineName: string): Promise<{
         drug_class: "",
         wrong_use: "",
       };
-    const summaryResp = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`,
-    );
+    // Fetch summary and full sections in parallel
+    const [summaryResp, sectionsResp] = await Promise.all([
+      fetch(
+        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`,
+      ),
+      fetch(
+        `https://en.wikipedia.org/api/rest_v1/page/mobile-sections/${encodeURIComponent(pageTitle)}`,
+      ),
+    ]);
     if (!summaryResp.ok)
       return {
         how_to_use: "",
@@ -1418,25 +1424,74 @@ async function fetchMedicineInfo(medicineName: string): Promise<{
       };
     const summaryData = await summaryResp.json();
     const extract = summaryData?.extract || "";
-    if (!extract)
-      return {
-        how_to_use: "",
-        used_for: "",
-        side_effects: "",
-        warnings: "",
-        drug_class: "",
-        wrong_use: "",
-      };
-    // Use the first 500 chars of the Wikipedia summary as "used_for"
     const used_for =
       extract.slice(0, 500) + (extract.length > 500 ? "..." : "");
+
+    // Parse full sections for side effects, contraindications, warnings, how to use
+    let side_effects = "";
+    let wrong_use = "";
+    let warnings = "";
+    let how_to_use = "";
+    let drug_class = "";
+    if (sectionsResp.ok) {
+      try {
+        const sectionsData = await sectionsResp.json();
+        const sections: Array<{ title?: string; text?: string }> = [
+          ...(sectionsData?.lead?.sections || []),
+          ...(sectionsData?.remaining?.sections || []),
+        ];
+        const stripHtml = (html: string) =>
+          html
+            .replace(/<[^>]+>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+        for (const sec of sections) {
+          const title = (sec.title || "").toLowerCase();
+          const text = stripHtml(sec.text || "").slice(0, 500);
+          if (!text) continue;
+          if (
+            !side_effects &&
+            (title.includes("side effect") || title.includes("adverse"))
+          )
+            side_effects = text;
+          if (
+            !wrong_use &&
+            (title.includes("contraindic") ||
+              title.includes("wrong use") ||
+              title.includes("when not"))
+          )
+            wrong_use = text;
+          if (
+            !warnings &&
+            (title.includes("warning") || title.includes("precaution"))
+          )
+            warnings = text;
+          if (
+            !how_to_use &&
+            (title.includes("dosage") ||
+              title.includes("how to use") ||
+              title.includes("administration"))
+          )
+            how_to_use = text;
+          if (
+            !drug_class &&
+            (title.includes("pharmacology") ||
+              title.includes("class") ||
+              title.includes("mechanism"))
+          )
+            drug_class = text.slice(0, 200);
+        }
+      } catch {
+        /* ignore section parse errors */
+      }
+    }
     return {
-      how_to_use: "",
+      how_to_use,
       used_for,
-      side_effects: "",
-      warnings: "",
-      drug_class: "",
-      wrong_use: "",
+      side_effects,
+      warnings,
+      drug_class,
+      wrong_use,
     };
   } catch {
     return {
