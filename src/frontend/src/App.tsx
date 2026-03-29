@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
   AlertCircle,
+  AlertTriangle,
   BookOpen,
   CalendarDays,
   Camera,
@@ -12,12 +13,14 @@ import {
   Eye,
   FlaskConical,
   History,
+  Layers,
   Loader2,
   LogOut,
   Mic,
   MicOff,
   Pill,
   RotateCcw,
+  ShieldAlert,
   ShieldCheck,
   Upload,
   User,
@@ -39,6 +42,10 @@ interface ScanResult {
   error?: string;
   rawOcrText?: string;
   how_to_use?: string;
+  used_for?: string;
+  side_effects?: string;
+  warnings?: string;
+  drug_class?: string;
 }
 
 interface HistoryItem {
@@ -543,7 +550,10 @@ function extractMedicineData(
     /^(MFG|MFD|EXP|BATCH|LOT|B\.NO|B\.N|B NO|MRP|NET|WT|TAB|CAP|INJ|SYRUP|CONTAINS|EACH|STORE|KEEP|DESCRIPTION|MANUFACTURED|MARKETED|FOR|USE|DO\s+NOT|WWW|HTTP|©|CIN|DRUG|REG|LIC|DL|COMPOSITION|INGREDIENTS|DOSAGE|WARNING|CAUTION|SCHEDULE|STRIP|MFGDT|MFDT|\d)/i;
   // Relaxed skipIfContains: removed tablet/capsule/injection/syrup so names like "CROCIN TABLETS" are kept
   const skipIfContains =
-    /(\d{2}[\/\-]\d{2,4}|www\.|\..com|batch|lot no|b\.no|\brs\b|\bmrp\b|phone|mob|tel:|fax|pvt\.?\s*ltd|pvt ltd|private limited|pharmaceuticals|laboratories|lab\.|pharma ltd|healthcare ltd|industries|village|taluka|nagar|road|street|plot|survey|gujarat|maharashtra|rajasthan|karnataka|hyderabad|mumbai|chennai|delhi|kolkata|bengaluru|ahmedabad|pune|pin code|\bpin\b|hydrochloride|hydrochlorid|sulphate|sulfate|phosphate|maleate|tartrate|citrate|acetate|gluconate|chloride|bromide|mesylate|fumarate|succinate|sodium|potassium|calcium|magnesium|\bsolution\b|\bsuspension\b|\bgel\b|\bcream\b|\bointment\b|\bpowder\b|\%)/i;
+    /(\d{2}[\/\-]\d{2,4}|www\.|\..com|batch|lot no|b\.no|\brs\b|\bmrp\b|phone|mob|tel:|fax|pvt\.?\s*ltd|pvt ltd|private limited|pharmaceuticals|\bpharma\b|\blaboratory\b|laboratories|lab\.|pharma ltd|healthcare ltd|industries|village|taluka|nagar|road|street|plot|survey|gujarat|maharashtra|rajasthan|karnataka|hyderabad|mumbai|chennai|delhi|kolkata|bengaluru|ahmedabad|pune|pin code|\bpin\b|hydrochloride|hydrochlorid|sulphate|sulfate|phosphate|maleate|tartrate|citrate|acetate|gluconate|chloride|bromide|mesylate|fumarate|succinate|sodium|potassium|calcium|magnesium|\bsolution\b|\bsuspension\b|\bgel\b|\bcream\b|\bointment\b|\bpowder\b|\%)/i;
+
+  const skipCompanyNames =
+    /\b(cipla|sun pharma|sun pharmaceutical|dr\.?\s*reddy|lupin|torrent|alkem|mankind|glenmark|abbott|pfizer|zydus|cadila|wockhardt|ranbaxy|ipca|novartis|bayer|roche|sanofi|glaxo|gsk|astrazeneca|merck|himalaya|dabur|patanjali|emcure|intas|micro labs|macleods|hetero|aurobindo|natco|strides|unichem|elder|eris|ajanta|indoco|biochem|biocon|piramal|aristo|medley|zuventus|franco indian|franco-indian|morepen|serum institute|bharat serums|bal pharma|coral labs|msd|abbvie|eli lilly|boehringer|ingelheim|takeda|astellas|otsuka|teva|mylan|sandoz|hospira|baxter|fresenius|b\.?\s*braun)\b/i;
 
   // Search first 20 lines of primaryNorm for brand name using scoring
   const topLines = primaryNorm
@@ -575,6 +585,8 @@ function extractMedicineData(
     if (line.length < 3 || line.length > 60) return null;
     if (skipPrefixes.test(line)) return null;
     if (skipIfContains.test(line)) return null;
+    if (skipCompanyNames.test(line)) return null;
+    if (/\b(ltd|limited|inc|corp|plc|llp|llc)\b/i.test(line)) return null;
     // Must have at least 3 consecutive alpha chars
     if (!/[A-Za-z]{3,}/.test(line)) return null;
     // Skip purely numeric lines
@@ -816,10 +828,15 @@ function speakResult(
   const mfg = formatDateDisplay(result.manufacturing_date) || tpl.unknown;
   const exp = formatDateDisplay(result.expiry_date) || tpl.unknown;
   const name = result.medicine_name || tpl.unknown;
+  const usedForText = result.used_for ? ` Used for: ${result.used_for}` : "";
   const howToUseText = result.how_to_use
     ? ` How to use: ${result.how_to_use}`
     : "";
-  const text = `${tpl.medicine}: ${name}. ${tpl.mfg}: ${mfg}. ${tpl.exp}: ${exp}. ${tpl.status}: ${statusText}.${howToUseText}`;
+  const sideEffectsText = result.side_effects
+    ? ` Side effects: ${result.side_effects}`
+    : "";
+  const warningsText = result.warnings ? ` Warnings: ${result.warnings}` : "";
+  const text = `${tpl.medicine}: ${name}. ${tpl.mfg}: ${mfg}. ${tpl.exp}: ${exp}. ${tpl.status}: ${statusText}.${usedForText}${howToUseText}${sideEffectsText}${warningsText}`;
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
   utterance.rate = 0.92;
@@ -828,27 +845,115 @@ function speakResult(
   return utterance;
 }
 
-async function fetchHowToUse(medicineName: string): Promise<string> {
-  if (!medicineName || medicineName === "Not detected") return "";
+async function fetchMedicineInfo(medicineName: string): Promise<{
+  how_to_use: string;
+  used_for: string;
+  side_effects: string;
+  warnings: string;
+  drug_class: string;
+}> {
+  if (!medicineName || medicineName === "Not detected")
+    return {
+      how_to_use: "",
+      used_for: "",
+      side_effects: "",
+      warnings: "",
+      drug_class: "",
+    };
   try {
     const encoded = encodeURIComponent(medicineName);
+    // Try OpenFDA first (US medicines)
     let url = `https://api.fda.gov/drug/label.json?search=openfda.brand_name:"${encoded}"&limit=1`;
     let resp = await fetch(url);
     if (!resp.ok) {
       url = `https://api.fda.gov/drug/label.json?search=openfda.generic_name:"${encoded}"&limit=1`;
       resp = await fetch(url);
     }
-    if (!resp.ok) return "";
-    const data = await resp.json();
-    const result = data?.results?.[0];
-    if (!result) return "";
-    const dosage =
-      result.dosage_and_administration?.[0] ||
-      result.indications_and_usage?.[0] ||
-      "";
-    return dosage.slice(0, 500) + (dosage.length > 500 ? "..." : "");
+    if (resp.ok) {
+      const data = await resp.json();
+      const result = data?.results?.[0];
+      if (result) {
+        const dosage = result.dosage_and_administration?.[0] || "";
+        const indications = result.indications_and_usage?.[0] || "";
+        const how_to_use =
+          dosage.slice(0, 500) + (dosage.length > 500 ? "..." : "");
+        const used_for =
+          indications.slice(0, 500) + (indications.length > 500 ? "..." : "");
+        const adverseRaw = result.adverse_reactions?.[0] || "";
+        const side_effects =
+          adverseRaw.slice(0, 400) + (adverseRaw.length > 400 ? "..." : "");
+        const warningsRaw =
+          result.warnings?.[0] || result.warnings_and_cautions?.[0] || "";
+        const warnings =
+          warningsRaw.slice(0, 400) + (warningsRaw.length > 400 ? "..." : "");
+        const drug_class =
+          result.openfda?.pharm_class_epc?.[0] ||
+          result.openfda?.product_type?.[0] ||
+          "";
+        if (used_for || how_to_use || side_effects || warnings || drug_class)
+          return { how_to_use, used_for, side_effects, warnings, drug_class };
+      }
+    }
+    // Fallback: Wikipedia search for broader medicine coverage (Indian & global brands)
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encoded}+drug+medicine&format=json&origin=*&srlimit=1`;
+    const searchResp = await fetch(searchUrl);
+    if (!searchResp.ok)
+      return {
+        how_to_use: "",
+        used_for: "",
+        side_effects: "",
+        warnings: "",
+        drug_class: "",
+      };
+    const searchData = await searchResp.json();
+    const pageTitle = searchData?.query?.search?.[0]?.title;
+    if (!pageTitle)
+      return {
+        how_to_use: "",
+        used_for: "",
+        side_effects: "",
+        warnings: "",
+        drug_class: "",
+      };
+    const summaryResp = await fetch(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`,
+    );
+    if (!summaryResp.ok)
+      return {
+        how_to_use: "",
+        used_for: "",
+        side_effects: "",
+        warnings: "",
+        drug_class: "",
+      };
+    const summaryData = await summaryResp.json();
+    const extract = summaryData?.extract || "";
+    if (!extract)
+      return {
+        how_to_use: "",
+        used_for: "",
+        side_effects: "",
+        warnings: "",
+        drug_class: "",
+      };
+    // Use the first 500 chars of the Wikipedia summary as "used_for"
+    const used_for =
+      extract.slice(0, 500) + (extract.length > 500 ? "..." : "");
+    return {
+      how_to_use: "",
+      used_for,
+      side_effects: "",
+      warnings: "",
+      drug_class: "",
+    };
   } catch {
-    return "";
+    return {
+      how_to_use: "",
+      used_for: "",
+      side_effects: "",
+      warnings: "",
+      drug_class: "",
+    };
   }
 }
 
@@ -1007,6 +1112,19 @@ function ResultCard({
           </p>
         </div>
       </div>
+      {result.used_for && (
+        <div className="mt-4 border-t border-border pt-3">
+          <div className="flex items-center gap-1.5 mb-2">
+            <BookOpen className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Used For
+            </span>
+          </div>
+          <p className="text-sm text-foreground leading-relaxed">
+            {result.used_for}
+          </p>
+        </div>
+      )}
       {result.how_to_use && (
         <div className="mt-4 border-t border-border pt-3">
           <div className="flex items-center gap-1.5 mb-2">
@@ -1017,6 +1135,45 @@ function ResultCard({
           </div>
           <p className="text-sm text-foreground leading-relaxed">
             {result.how_to_use}
+          </p>
+        </div>
+      )}
+      {result.drug_class && (
+        <div className="mt-4 border-t border-border pt-3">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Layers className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Drug Class
+            </span>
+          </div>
+          <span className="inline-block text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+            {result.drug_class}
+          </span>
+        </div>
+      )}
+      {result.side_effects && (
+        <div className="mt-4 border-t border-border pt-3">
+          <div className="flex items-center gap-1.5 mb-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-yellow-500" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Side Effects
+            </span>
+          </div>
+          <p className="text-sm text-foreground leading-relaxed">
+            {result.side_effects}
+          </p>
+        </div>
+      )}
+      {result.warnings && (
+        <div className="mt-4 border-t border-border pt-3">
+          <div className="flex items-center gap-1.5 mb-2">
+            <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Warnings
+            </span>
+          </div>
+          <p className="text-sm text-foreground leading-relaxed">
+            {result.warnings}
           </p>
         </div>
       )}
@@ -1343,8 +1500,15 @@ export default function App() {
       }
 
       const res = extractMedicineData(combinedOcr, combinedOcr);
-      const howToUse = await fetchHowToUse(res.medicine_name);
-      const resWithUsage: ScanResult = { ...res, how_to_use: howToUse };
+      const medicineInfo = await fetchMedicineInfo(res.medicine_name);
+      const resWithUsage: ScanResult = {
+        ...res,
+        how_to_use: medicineInfo.how_to_use,
+        used_for: medicineInfo.used_for,
+        side_effects: medicineInfo.side_effects,
+        warnings: medicineInfo.warnings,
+        drug_class: medicineInfo.drug_class,
+      };
       setResult(resWithUsage);
       setAutoSpeak(true);
 
