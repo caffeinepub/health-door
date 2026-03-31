@@ -20,10 +20,13 @@ import {
   Mic,
   MicOff,
   Pill,
+  Play,
   RotateCcw,
   Share2,
   ShieldAlert,
   ShieldCheck,
+  Square,
+  Trash2,
   Upload,
   User,
   Volume2,
@@ -89,6 +92,13 @@ interface LangTemplate {
   wantScanAnother: string;
   tapBelow: string;
   wrongUse: string;
+  record: string;
+  stopRecording: string;
+  playNote: string;
+  stopPlay: string;
+  deleteNote: string;
+  reRecord: string;
+  voiceNote: string;
 }
 
 // ------- Multi-language templates -------
@@ -124,6 +134,13 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     wantScanAnother: "Want to scan another medicine?",
     tapBelow: "Tap the button below to start a new scan",
     wrongUse: "Wrong Use / Contraindications",
+    record: "Record",
+    stopRecording: "Stop",
+    playNote: "Play",
+    stopPlay: "Stop",
+    deleteNote: "Delete",
+    reRecord: "Re-record",
+    voiceNote: "Voice Note",
   },
   "hi-IN": {
     medicine: "दवा",
@@ -156,6 +173,13 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     wantScanAnother: "क्या आप और दवा स्कैन करना चाहते हैं?",
     tapBelow: "नया स्कैन शुरू करने के लिए नीचे बटन दबाएं",
     wrongUse: "गलत उपयोग / मतभेद",
+    record: "रिकॉर्ड",
+    stopRecording: "रोकें",
+    playNote: "चलाएं",
+    stopPlay: "रोकें",
+    deleteNote: "हटाएं",
+    reRecord: "फिर से रिकॉर्ड",
+    voiceNote: "वॉयस नोट",
   },
   "es-ES": {
     medicine: "Medicamento",
@@ -188,6 +212,13 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     wantScanAnother: "¿Quieres escanear otro medicamento?",
     tapBelow: "Toca el botón de abajo para iniciar un nuevo escaneo",
     wrongUse: "Uso Incorrecto / Contraindicaciones",
+    record: "Grabar",
+    stopRecording: "Detener",
+    playNote: "Reproducir",
+    stopPlay: "Detener",
+    deleteNote: "Eliminar",
+    reRecord: "Volver a grabar",
+    voiceNote: "Nota de voz",
   },
   "fr-FR": {
     medicine: "Médicament",
@@ -220,6 +251,13 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     wantScanAnother: "Voulez-vous scanner un autre médicament?",
     tapBelow: "Appuyez sur le bouton ci-dessous pour commencer un nouveau scan",
     wrongUse: "Mauvaise Utilisation / Contre-indications",
+    record: "Enregistrer",
+    stopRecording: "Arrêter",
+    playNote: "Lire",
+    stopPlay: "Arrêter",
+    deleteNote: "Supprimer",
+    reRecord: "Réenregistrer",
+    voiceNote: "Note vocale",
   },
   "ar-SA": {
     medicine: "دواء",
@@ -252,6 +290,13 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     wantScanAnother: "هل تريد مسح دواء آخر؟",
     tapBelow: "اضغط الزر أدناه لبدء مسح جديد",
     wrongUse: "الاستخدام الخاطئ / موانع الاستعمال",
+    record: "تسجيل",
+    stopRecording: "إيقاف",
+    playNote: "تشغيل",
+    stopPlay: "إيقاف",
+    deleteNote: "حذف",
+    reRecord: "إعادة التسجيل",
+    voiceNote: "ملاحظة صوتية",
   },
   "zh-CN": {
     medicine: "药品",
@@ -284,6 +329,13 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     wantScanAnother: "要扫描另一种药物吗？",
     tapBelow: "点击下方按钮开始新扫描",
     wrongUse: "错误使用 / 禁忌症",
+    record: "录音",
+    stopRecording: "停止",
+    playNote: "播放",
+    stopPlay: "停止",
+    deleteNote: "删除",
+    reRecord: "重新录音",
+    voiceNote: "语音备注",
   },
   "de-DE": {
     medicine: "Medikament",
@@ -317,6 +369,13 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     tapBelow:
       "Tippen Sie auf die Schaltfläche unten, um einen neuen Scan zu starten",
     wrongUse: "Falsche Anwendung / Kontraindikationen",
+    record: "Aufnehmen",
+    stopRecording: "Stoppen",
+    playNote: "Abspielen",
+    stopPlay: "Stoppen",
+    deleteNote: "Löschen",
+    reRecord: "Neu aufnehmen",
+    voiceNote: "Sprachnotiz",
   },
   "pt-BR": {
     medicine: "Medicamento",
@@ -349,6 +408,13 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     wantScanAnother: "Deseja escanear outro medicamento?",
     tapBelow: "Toque no botão abaixo para iniciar um novo scan",
     wrongUse: "Uso Incorreto / Contraindicações",
+    record: "Gravar",
+    stopRecording: "Parar",
+    playNote: "Reproduzir",
+    stopPlay: "Parar",
+    deleteNote: "Excluir",
+    reRecord: "Regravar",
+    voiceNote: "Nota de voz",
   },
   "ru-RU": {
     medicine: "Лекарство",
@@ -381,6 +447,13 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     wantScanAnother: "Хотите сканировать другое лекарство?",
     tapBelow: "Нажмите кнопку ниже, чтобы начать новое сканирование",
     wrongUse: "Неправильное применение / Противопоказания",
+    record: "Записать",
+    stopRecording: "Стоп",
+    playNote: "Воспроизвести",
+    stopPlay: "Стоп",
+    deleteNote: "Удалить",
+    reRecord: "Перезаписать",
+    voiceNote: "Голосовая заметка",
   },
   "ja-JP": {
     medicine: "薬",
@@ -413,6 +486,13 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     wantScanAnother: "別の薬をスキャンしますか？",
     tapBelow: "新しいスキャンを開始するには下のボタンをタップ",
     wrongUse: "誤った使用法 / 禁忌",
+    record: "録音",
+    stopRecording: "停止",
+    playNote: "再生",
+    stopPlay: "停止",
+    deleteNote: "削除",
+    reRecord: "再録音",
+    voiceNote: "音声メモ",
   },
   "ta-IN": {
     medicine: "மருந்து",
@@ -445,6 +525,13 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     wantScanAnother: "மற்றொரு மருந்து ஸ்கேன் செய்ய விரும்புகிறீர்களா?",
     tapBelow: "புதிய ஸ்கேன் தொடங்க கீழே உள்ள பொத்தானை அழுத்துங்கள்",
     wrongUse: "தவறான பயன்பாடு / முரண்பாடுகள்",
+    record: "பதிவு செய்",
+    stopRecording: "நிறுத்து",
+    playNote: "இயக்கு",
+    stopPlay: "நிறுத்து",
+    deleteNote: "நீக்கு",
+    reRecord: "மீண்டும் பதிவு செய்",
+    voiceNote: "குரல் குறிப்பு",
   },
   "ur-PK": {
     medicine: "دوا",
@@ -477,6 +564,13 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     wantScanAnother: "کیا آپ دوسری دوا اسکین کرنا چاہتے ہیں؟",
     tapBelow: "نیا اسکین شروع کرنے کے لیے نیچے بٹن دبائیں",
     wrongUse: "غلط استعمال / ممانعت",
+    record: "ریکارڈ",
+    stopRecording: "روکیں",
+    playNote: "چلائیں",
+    stopPlay: "روکیں",
+    deleteNote: "حذف کریں",
+    reRecord: "دوبارہ ریکارڈ",
+    voiceNote: "آواز نوٹ",
   },
   "te-IN": {
     medicine: "మందు",
@@ -509,23 +603,310 @@ const LANG_TEMPLATES: Record<string, LangTemplate> = {
     wantScanAnother: "మరొక మందు స్కాన్ చేయాలనుకుంటున్నారా?",
     tapBelow: "కొత్త స్కాన్ ప్రారంభించడానికి దిగువ బటన్ నొక్కండి",
     wrongUse: "తప్పుడు వాడుక / విరుద్ధ సంకేతాలు",
+    record: "రికార్డ్ చేయండి",
+    stopRecording: "ఆపండి",
+    playNote: "ప్లే చేయండి",
+    stopPlay: "ఆపండి",
+    deleteNote: "తొలగించండి",
+    reRecord: "మళ్ళీ రికార్డ్ చేయండి",
+    voiceNote: "వాయిస్ నోట్",
+  },
+  "bn-IN": {
+    medicine: "ওষুধ",
+    mfg: "প্রস্তুতির তারিখ",
+    exp: "মেয়াদ শেষ তারিখ",
+    status: "অবস্থা",
+    valid: "বৈধ",
+    expired: "মেয়াদোত্তীর্ণ",
+    unknown: "অজানা",
+    mfgDate: "প্রস্তুতির তারিখ",
+    expDate: "মেয়াদ শেষ তারিখ",
+    usedFor: "ব্যবহারের জন্য",
+    howToUse: "কীভাবে ব্যবহার করবেন",
+    drugClass: "ওষুধের শ্রেণী",
+    sideEffects: "পার্শ্বপ্রতিক্রিয়া",
+    warnings: "সতর্কতা",
+    notDetected: "সনাক্ত হয়নি",
+    showRawOcr: "OCR টেক্সট দেখুন",
+    hideRawOcr: "OCR টেক্সট লুকান",
+    scanResults: "স্ক্যান ফলাফল",
+    scanAnother: "আরেকটি ওষুধ স্ক্যান করুন",
+    uploadScan: "ওষুধ আপলোড ও স্ক্যান করুন",
+    analyzeBtn: "ওষুধের স্ট্রিপ বিশ্লেষণ করুন",
+    readingStrip: "ওষুধের স্ট্রিপ পড়া হচ্ছে...",
+    browseFile: "ফাইল খুঁজুন",
+    scanCamera: "ক্যামেরায় স্ক্যান করুন",
+    listeningText: "শুনছি...",
+    voiceText: "ভয়েস",
+    recentScans: "সাম্প্রতিক স্ক্যান",
+    wantScanAnother: "আরেকটি ওষুধ স্ক্যান করতে চান?",
+    tapBelow: "নতুন স্ক্যান শুরু করতে নিচের বোতামে ট্যাপ করুন",
+    wrongUse: "ভুল ব্যবহার / প্রতিবিধান",
+    record: "রেকর্ড",
+    stopRecording: "থামুন",
+    playNote: "চালান",
+    stopPlay: "থামুন",
+    deleteNote: "মুছুন",
+    reRecord: "আবার রেকর্ড",
+    voiceNote: "ভয়েস নোট",
+  },
+  "kn-IN": {
+    medicine: "ಔಷಧ",
+    mfg: "ತಯಾರಿಕೆ ದಿನಾಂಕ",
+    exp: "ಅಂತಿಮ ದಿನಾಂಕ",
+    status: "ಸ್ಥಿತಿ",
+    valid: "ಮಾನ್ಯ",
+    expired: "ಅವಧಿ ಮೀರಿದೆ",
+    unknown: "ತಿಳಿದಿಲ್ಲ",
+    mfgDate: "ತಯಾರಿಕೆ ದಿನಾಂಕ",
+    expDate: "ಅಂತಿಮ ದಿನಾಂಕ",
+    usedFor: "ಬಳಕೆ",
+    howToUse: "ಬಳಸುವ ವಿಧಾನ",
+    drugClass: "ಔಷಧ ವರ್ಗ",
+    sideEffects: "ಅಡ್ಡ ಪರಿಣಾಮಗಳು",
+    warnings: "ಎಚ್ಚರಿಕೆಗಳು",
+    notDetected: "ಪತ್ತೆಯಾಗಿಲ್ಲ",
+    showRawOcr: "OCR ಪಠ್ಯ ತೋರಿಸಿ",
+    hideRawOcr: "OCR ಪಠ್ಯ ಮರೆಮಾಡಿ",
+    scanResults: "ಸ್ಕ್ಯಾನ್ ಫಲಿತಾಂಶಗಳು",
+    scanAnother: "ಮತ್ತೊಂದು ಔಷಧ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
+    uploadScan: "ಔಷಧ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ & ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
+    analyzeBtn: "ಔಷಧ ಸ್ಟ್ರಿಪ್ ವಿಶ್ಲೇಷಿಸಿ",
+    readingStrip: "ಔಷಧ ಸ್ಟ್ರಿಪ್ ಓದಲಾಗುತ್ತಿದೆ...",
+    browseFile: "ಫೈಲ್ ನೋಡಿ",
+    scanCamera: "ಕ್ಯಾಮೆರಾದಿಂದ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
+    listeningText: "ಕೇಳುತ್ತಿದ್ದೇನೆ...",
+    voiceText: "ಧ್ವನಿ",
+    recentScans: "ಇತ್ತೀಚಿನ ಸ್ಕ್ಯಾನ್‌ಗಳು",
+    wantScanAnother: "ಮತ್ತೊಂದು ಔಷಧ ಸ್ಕ್ಯಾನ್ ಮಾಡಲು ಬಯಸುವಿರಾ?",
+    tapBelow: "ಹೊಸ ಸ್ಕ್ಯಾನ್ ಪ್ರಾರಂಭಿಸಲು ಕೆಳಗಿನ ಬಟನ್ ಒತ್ತಿ",
+    wrongUse: "ತಪ್ಪು ಬಳಕೆ / ವಿರೋಧಾಭಾಸಗಳು",
+    record: "ರೆಕಾರ್ಡ್",
+    stopRecording: "ನಿಲ್ಲಿಸಿ",
+    playNote: "ಪ್ಲೇ ಮಾಡಿ",
+    stopPlay: "ನಿಲ್ಲಿಸಿ",
+    deleteNote: "ಅಳಿಸಿ",
+    reRecord: "ಮತ್ತೆ ರೆಕಾರ್ಡ್",
+    voiceNote: "ಧ್ವನಿ ಟಿಪ್ಪಣಿ",
+  },
+  "ml-IN": {
+    medicine: "മരുന്ന്",
+    mfg: "നിർമ്മാണ തീയതി",
+    exp: "കാലഹരണ തീയതി",
+    status: "സ്ഥിതി",
+    valid: "സാധുവാണ്",
+    expired: "കാലഹരണപ്പെട്ടു",
+    unknown: "അജ്ഞാതം",
+    mfgDate: "നിർമ്മാണ തീയതി",
+    expDate: "കാലഹരണ തീയതി",
+    usedFor: "ഉപയോഗം",
+    howToUse: "ഉപയോഗിക്കുന്ന വിധം",
+    drugClass: "മരുന്ന് വർഗ്ഗം",
+    sideEffects: "പാർശ്വഫലങ്ങൾ",
+    warnings: "മുന്നറിയിപ്പുകൾ",
+    notDetected: "കണ്ടെത്തിയില്ല",
+    showRawOcr: "OCR ടെക്സ്റ്റ് കാണിക്കൂ",
+    hideRawOcr: "OCR ടെക്സ്റ്റ് മറയ്ക്കൂ",
+    scanResults: "സ്കാൻ ഫലങ്ങൾ",
+    scanAnother: "മറ്റൊരു മരുന്ന് സ്കാൻ ചെയ്യുക",
+    uploadScan: "മരുന്ന് അപ്‌ലോഡ് & സ്കാൻ ചെയ്യുക",
+    analyzeBtn: "മരുന്ന് സ്ട്രിപ്പ് വിശകലനം ചെയ്യുക",
+    readingStrip: "മരുന്ന് സ്ട്രിപ്പ് വായിക്കുന്നു...",
+    browseFile: "ഫയൽ തിരയുക",
+    scanCamera: "ക്യാമറ ഉപയോഗിച്ച് സ്കാൻ ചെയ്യുക",
+    listeningText: "കേൾക്കുന്നു...",
+    voiceText: "ശബ്ദം",
+    recentScans: "സമീപകാല സ്കാനുകൾ",
+    wantScanAnother: "മറ്റൊരു മരുന്ന് സ്കാൻ ചെയ്യണോ?",
+    tapBelow: "പുതിയ സ്കാൻ ആരംഭിക്കാൻ താഴെ ബട്ടൺ ടാപ്പ് ചെയ്യുക",
+    wrongUse: "തെറ്റായ ഉപയോഗം / വിരുദ്ധ സൂചനകൾ",
+    record: "റെക്കോർഡ്",
+    stopRecording: "നിർത്തുക",
+    playNote: "പ്ലേ ചെയ്യുക",
+    stopPlay: "നിർത്തുക",
+    deleteNote: "മായ്ക്കുക",
+    reRecord: "വീണ്ടും റെക്കോർഡ്",
+    voiceNote: "വോയ്സ് നോട്ട്",
+  },
+  "mr-IN": {
+    medicine: "औषध",
+    mfg: "उत्पादन तारीख",
+    exp: "कालबाह्य तारीख",
+    status: "स्थिती",
+    valid: "वैध",
+    expired: "कालबाह्य",
+    unknown: "अज्ञात",
+    mfgDate: "उत्पादन तारीख",
+    expDate: "कालबाह्य तारीख",
+    usedFor: "वापर",
+    howToUse: "कसे वापरावे",
+    drugClass: "औषध वर्ग",
+    sideEffects: "दुष्परिणाम",
+    warnings: "इशारे",
+    notDetected: "आढळले नाही",
+    showRawOcr: "OCR मजकूर दाखवा",
+    hideRawOcr: "OCR मजकूर लपवा",
+    scanResults: "स्कॅन निकाल",
+    scanAnother: "दुसरे औषध स्कॅन करा",
+    uploadScan: "औषध अपलोड आणि स्कॅन करा",
+    analyzeBtn: "औषध स्ट्रिप विश्लेषण करा",
+    readingStrip: "औषध स्ट्रिप वाचत आहे...",
+    browseFile: "फाईल शोधा",
+    scanCamera: "कॅमेराने स्कॅन करा",
+    listeningText: "ऐकत आहे...",
+    voiceText: "आवाज",
+    recentScans: "अलीकडील स्कॅन",
+    wantScanAnother: "दुसरे औषध स्कॅन करायचे आहे का?",
+    tapBelow: "नवीन स्कॅन सुरू करण्यासाठी खालील बटणावर टॅप करा",
+    wrongUse: "चुकीचा वापर / विरोधाभास",
+    record: "रेकॉर्ड",
+    stopRecording: "थांबा",
+    playNote: "चालवा",
+    stopPlay: "थांबा",
+    deleteNote: "हटवा",
+    reRecord: "पुन्हा रेकॉर्ड",
+    voiceNote: "व्हॉईस नोट",
+  },
+  "id-ID": {
+    medicine: "Obat",
+    mfg: "Tanggal produksi",
+    exp: "Tanggal kedaluwarsa",
+    status: "Status",
+    valid: "Berlaku",
+    expired: "Kedaluwarsa",
+    unknown: "Tidak diketahui",
+    mfgDate: "Tgl. Produksi",
+    expDate: "Tgl. Kedaluwarsa",
+    usedFor: "Digunakan untuk",
+    howToUse: "Cara penggunaan",
+    drugClass: "Kelas obat",
+    sideEffects: "Efek samping",
+    warnings: "Peringatan",
+    notDetected: "Tidak terdeteksi",
+    showRawOcr: "Tampilkan teks OCR",
+    hideRawOcr: "Sembunyikan teks OCR",
+    scanResults: "Hasil pemindaian",
+    scanAnother: "Pindai obat lain",
+    uploadScan: "Unggah & pindai obat",
+    analyzeBtn: "Analisis strip obat",
+    readingStrip: "Membaca strip obat...",
+    browseFile: "Cari file",
+    scanCamera: "Pindai dengan kamera",
+    listeningText: "Mendengarkan...",
+    voiceText: "Suara",
+    recentScans: "Pemindaian terbaru",
+    wantScanAnother: "Ingin memindai obat lain?",
+    tapBelow: "Ketuk tombol di bawah untuk memulai pemindaian baru",
+    wrongUse: "Penggunaan Salah / Kontraindikasi",
+    record: "Rekam",
+    stopRecording: "Berhenti",
+    playNote: "Putar",
+    stopPlay: "Berhenti",
+    deleteNote: "Hapus",
+    reRecord: "Rekam ulang",
+    voiceNote: "Catatan suara",
+  },
+  "ko-KR": {
+    medicine: "약",
+    mfg: "제조일",
+    exp: "유효기간",
+    status: "상태",
+    valid: "유효",
+    expired: "만료됨",
+    unknown: "알 수 없음",
+    mfgDate: "제조일",
+    expDate: "유효기간",
+    usedFor: "사용 용도",
+    howToUse: "사용 방법",
+    drugClass: "약물 분류",
+    sideEffects: "부작용",
+    warnings: "경고",
+    notDetected: "감지되지 않음",
+    showRawOcr: "OCR 텍스트 보기",
+    hideRawOcr: "OCR 텍스트 숨기기",
+    scanResults: "스캔 결과",
+    scanAnother: "다른 약 스캔",
+    uploadScan: "약 업로드 & 스캔",
+    analyzeBtn: "약 스트립 분석",
+    readingStrip: "약 스트립 읽는 중...",
+    browseFile: "파일 찾기",
+    scanCamera: "카메라로 스캔",
+    listeningText: "듣는 중...",
+    voiceText: "음성",
+    recentScans: "최근 스캔",
+    wantScanAnother: "다른 약을 스캔하시겠습니까?",
+    tapBelow: "새 스캔을 시작하려면 아래 버튼을 탭하세요",
+    wrongUse: "잘못된 사용 / 금기 사항",
+    record: "녹음",
+    stopRecording: "중지",
+    playNote: "재생",
+    stopPlay: "중지",
+    deleteNote: "삭제",
+    reRecord: "다시 녹음",
+    voiceNote: "음성 메모",
+  },
+  "it-IT": {
+    medicine: "Farmaco",
+    mfg: "Data di produzione",
+    exp: "Data di scadenza",
+    status: "Stato",
+    valid: "Valido",
+    expired: "Scaduto",
+    unknown: "Sconosciuto",
+    mfgDate: "Data produzione",
+    expDate: "Data scadenza",
+    usedFor: "Utilizzato per",
+    howToUse: "Come usare",
+    drugClass: "Classe farmacologica",
+    sideEffects: "Effetti collaterali",
+    warnings: "Avvertenze",
+    notDetected: "Non rilevato",
+    showRawOcr: "Mostra testo OCR",
+    hideRawOcr: "Nascondi testo OCR",
+    scanResults: "Risultati scansione",
+    scanAnother: "Scansiona un altro farmaco",
+    uploadScan: "Carica e scansiona farmaco",
+    analyzeBtn: "Analizza striscia farmaco",
+    readingStrip: "Lettura striscia farmaco...",
+    browseFile: "Sfoglia file",
+    scanCamera: "Scansiona con fotocamera",
+    listeningText: "In ascolto...",
+    voiceText: "Voce",
+    recentScans: "Scansioni recenti",
+    wantScanAnother: "Vuoi scansionare un altro farmaco?",
+    tapBelow: "Tocca il pulsante in basso per iniziare una nuova scansione",
+    wrongUse: "Uso Scorretto / Controindicazioni",
+    record: "Registra",
+    stopRecording: "Ferma",
+    playNote: "Riproduci",
+    stopPlay: "Ferma",
+    deleteNote: "Elimina",
+    reRecord: "Ri-registra",
+    voiceNote: "Nota vocale",
   },
 };
 
 const LANGUAGES = [
   { code: "en-US", label: "English", flag: "🇺🇸" },
   { code: "hi-IN", label: "Hindi", flag: "🇮🇳" },
+  { code: "bn-IN", label: "বাংলা", flag: "🇧🇩" },
+  { code: "mr-IN", label: "मराठी", flag: "🇮🇳" },
+  { code: "te-IN", label: "తెలుగు", flag: "🇮🇳" },
+  { code: "ta-IN", label: "தமிழ்", flag: "🇮🇳" },
+  { code: "kn-IN", label: "ಕನ್ನಡ", flag: "🇮🇳" },
+  { code: "ml-IN", label: "മലയാളം", flag: "🇮🇳" },
+  { code: "ur-PK", label: "اردو", flag: "🇵🇰" },
+  { code: "ar-SA", label: "العربية", flag: "🇸🇦" },
   { code: "es-ES", label: "Español", flag: "🇪🇸" },
   { code: "fr-FR", label: "Français", flag: "🇫🇷" },
-  { code: "ar-SA", label: "العربية", flag: "🇸🇦" },
-  { code: "zh-CN", label: "中文", flag: "🇨🇳" },
+  { code: "it-IT", label: "Italiano", flag: "🇮🇹" },
   { code: "de-DE", label: "Deutsch", flag: "🇩🇪" },
   { code: "pt-BR", label: "Português", flag: "🇧🇷" },
   { code: "ru-RU", label: "Русский", flag: "🇷🇺" },
+  { code: "ko-KR", label: "한국어", flag: "🇰🇷" },
   { code: "ja-JP", label: "日本語", flag: "🇯🇵" },
-  { code: "ta-IN", label: "தமிழ்", flag: "🇮🇳" },
-  { code: "ur-PK", label: "اردو", flag: "🇵🇰" },
-  { code: "te-IN", label: "తెలుగు", flag: "🇮🇳" },
+  { code: "zh-CN", label: "中文", flag: "🇨🇳" },
+  { code: "id-ID", label: "Indonesia", flag: "🇮🇩" },
 ];
 
 // ------- Constants -------
@@ -1254,23 +1635,44 @@ function speakResult(
   function selectVoice(utt: SpeechSynthesisUtterance) {
     const voices = window.speechSynthesis.getVoices();
     if (voices.length === 0) return;
+    const exactMatch = voices.find((v) => v.lang === lang);
     const langPrefix = lang.split("-")[0];
-    const matching = voices.filter((v) => v.lang.startsWith(langPrefix));
-    const local = matching.find((v) => v.localService);
-    utt.voice = local || matching[0] || null;
+    const prefixMatch = voices.find((v) => v.lang.startsWith(langPrefix));
+    const localPrefixMatch = voices.find(
+      (v) => v.lang.startsWith(langPrefix) && v.localService,
+    );
+    const bestMatch = exactMatch || localPrefixMatch || prefixMatch;
+    if (bestMatch) utt.voice = bestMatch;
   }
 
   window.speechSynthesis.cancel();
 
   const voices = window.speechSynthesis.getVoices();
+  const addIOSKeepalive = (utt: SpeechSynthesisUtterance) => {
+    if (/iP(hone|ad|od)/.test(navigator.userAgent)) {
+      const resumeTimer = setInterval(() => {
+        if (!window.speechSynthesis.speaking) {
+          clearInterval(resumeTimer);
+          return;
+        }
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }, 10000);
+      utt.addEventListener("end", () => clearInterval(resumeTimer));
+      utt.addEventListener("error", () => clearInterval(resumeTimer));
+    }
+  };
+
   if (voices.length > 0) {
     selectVoice(utterance);
     window.speechSynthesis.speak(utterance);
+    addIOSKeepalive(utterance);
   } else {
     // Voices not loaded yet — wait for voiceschanged event
     const handler = () => {
       selectVoice(utterance);
       window.speechSynthesis.speak(utterance);
+      addIOSKeepalive(utterance);
       window.speechSynthesis.removeEventListener("voiceschanged", handler);
     };
     window.speechSynthesis.addEventListener("voiceschanged", handler);
@@ -1320,28 +1722,52 @@ async function fetchMedicineInfo(medicineName: string): Promise<{
   drug_class: string;
   wrong_use: string;
 }> {
-  if (!medicineName || medicineName === "Not detected")
-    return {
-      how_to_use: "",
-      used_for: "",
-      side_effects: "",
-      warnings: "",
-      drug_class: "",
-      wrong_use: "",
-    };
-  try {
-    const encoded = encodeURIComponent(medicineName);
-    // Try OpenFDA first (US medicines)
-    let url = `https://api.fda.gov/drug/label.json?search=openfda.brand_name:"${encoded}"&limit=1`;
-    let resp = await fetch(url);
-    if (!resp.ok) {
-      url = `https://api.fda.gov/drug/label.json?search=openfda.generic_name:"${encoded}"&limit=1`;
-      resp = await fetch(url);
-    }
-    if (resp.ok) {
-      const data = await resp.json();
-      const result = data?.results?.[0];
-      if (result) {
+  const empty = {
+    how_to_use: "",
+    used_for: "",
+    side_effects: "",
+    warnings: "",
+    drug_class: "",
+    wrong_use: "",
+  };
+  if (!medicineName || medicineName === "Not detected") return empty;
+
+  // Clean dosage suffixes from the name
+  const cleaned = medicineName
+    .replace(
+      /\b(TABLETS?|CAPSULES?|CAP|TAB|INJECTION|INJ|SYRUP|GEL|CREAM|DROPS?|LOTION|OINTMENT|SUSPENSION|SOLUTION)\b/gi,
+      "",
+    )
+    .replace(/\b\d+\s*(MG|ML|GM|G|MCG|IU|%)?\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const name = cleaned || medicineName;
+  const words = name.split(/\s+/).filter(Boolean);
+  const firstWord = words[0] || name;
+  const firstTwo = words.slice(0, 2).join(" ");
+
+  const stripHtml = (html: string) =>
+    html
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  // --- OpenFDA helper ---
+  async function tryOpenFDA(query: string) {
+    const enc = encodeURIComponent(query);
+    const urls = [
+      `https://api.fda.gov/drug/label.json?search=openfda.brand_name:"${enc}"&limit=1`,
+      `https://api.fda.gov/drug/label.json?search=openfda.generic_name:"${enc}"&limit=1`,
+      `https://api.fda.gov/drug/label.json?search="${enc}"&limit=1`,
+    ];
+    for (const url of urls) {
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) continue;
+        const data = await resp.json();
+        const result = data?.results?.[0];
+        if (!result) continue;
         const dosage = result.dosage_and_administration?.[0] || "";
         const indications = result.indications_and_usage?.[0] || "";
         const how_to_use =
@@ -1379,129 +1805,197 @@ async function fetchMedicineInfo(medicineName: string): Promise<{
             drug_class,
             wrong_use,
           };
-      }
-    }
-    // Fallback: Wikipedia search for broader medicine coverage (Indian & global brands)
-    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encoded}+drug+medicine&format=json&origin=*&srlimit=1`;
-    const searchResp = await fetch(searchUrl);
-    if (!searchResp.ok)
-      return {
-        how_to_use: "",
-        used_for: "",
-        side_effects: "",
-        warnings: "",
-        drug_class: "",
-        wrong_use: "",
-      };
-    const searchData = await searchResp.json();
-    const pageTitle = searchData?.query?.search?.[0]?.title;
-    if (!pageTitle)
-      return {
-        how_to_use: "",
-        used_for: "",
-        side_effects: "",
-        warnings: "",
-        drug_class: "",
-        wrong_use: "",
-      };
-    // Fetch summary and full sections in parallel
-    const [summaryResp, sectionsResp] = await Promise.all([
-      fetch(
-        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`,
-      ),
-      fetch(
-        `https://en.wikipedia.org/api/rest_v1/page/mobile-sections/${encodeURIComponent(pageTitle)}`,
-      ),
-    ]);
-    if (!summaryResp.ok)
-      return {
-        how_to_use: "",
-        used_for: "",
-        side_effects: "",
-        warnings: "",
-        drug_class: "",
-        wrong_use: "",
-      };
-    const summaryData = await summaryResp.json();
-    const extract = summaryData?.extract || "";
-    const used_for =
-      extract.slice(0, 500) + (extract.length > 500 ? "..." : "");
-
-    // Parse full sections for side effects, contraindications, warnings, how to use
-    let side_effects = "";
-    let wrong_use = "";
-    let warnings = "";
-    let how_to_use = "";
-    let drug_class = "";
-    if (sectionsResp.ok) {
-      try {
-        const sectionsData = await sectionsResp.json();
-        const sections: Array<{ title?: string; text?: string }> = [
-          ...(sectionsData?.lead?.sections || []),
-          ...(sectionsData?.remaining?.sections || []),
-        ];
-        const stripHtml = (html: string) =>
-          html
-            .replace(/<[^>]+>/g, " ")
-            .replace(/\s+/g, " ")
-            .trim();
-        for (const sec of sections) {
-          const title = (sec.title || "").toLowerCase();
-          const text = stripHtml(sec.text || "").slice(0, 500);
-          if (!text) continue;
-          if (
-            !side_effects &&
-            (title.includes("side effect") || title.includes("adverse"))
-          )
-            side_effects = text;
-          if (
-            !wrong_use &&
-            (title.includes("contraindic") ||
-              title.includes("wrong use") ||
-              title.includes("when not"))
-          )
-            wrong_use = text;
-          if (
-            !warnings &&
-            (title.includes("warning") || title.includes("precaution"))
-          )
-            warnings = text;
-          if (
-            !how_to_use &&
-            (title.includes("dosage") ||
-              title.includes("how to use") ||
-              title.includes("administration"))
-          )
-            how_to_use = text;
-          if (
-            !drug_class &&
-            (title.includes("pharmacology") ||
-              title.includes("class") ||
-              title.includes("mechanism"))
-          )
-            drug_class = text.slice(0, 200);
-        }
       } catch {
-        /* ignore section parse errors */
+        /* continue */
       }
     }
-    return {
-      how_to_use,
-      used_for,
-      side_effects,
-      warnings,
-      drug_class,
-      wrong_use,
-    };
+    return null;
+  }
+
+  // --- Wikipedia helper ---
+  async function tryWikipedia(query: string) {
+    try {
+      const enc = encodeURIComponent(query);
+      const searchResp = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${enc}+drug+medicine&format=json&origin=*&srlimit=1`,
+      );
+      if (!searchResp.ok) return null;
+      const searchData = await searchResp.json();
+      const pageTitle = searchData?.query?.search?.[0]?.title;
+      if (!pageTitle) return null;
+
+      const [summaryResp, sectionsResp] = await Promise.all([
+        fetch(
+          `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`,
+        ),
+        fetch(
+          `https://en.wikipedia.org/api/rest_v1/page/mobile-sections/${encodeURIComponent(pageTitle)}`,
+        ),
+      ]);
+      if (!summaryResp.ok) return null;
+
+      const summaryData = await summaryResp.json();
+      const extract = summaryData?.extract || "";
+      // Always set used_for from extract if available
+      const used_for = extract
+        ? extract.slice(0, 500) + (extract.length > 500 ? "..." : "")
+        : "";
+
+      let side_effects = "";
+      let wrong_use = "";
+      let warnings = "";
+      let how_to_use = "";
+      let drug_class = "";
+
+      if (sectionsResp.ok) {
+        try {
+          const sectionsData = await sectionsResp.json();
+          const sections: Array<{ title?: string; text?: string }> = [
+            ...(sectionsData?.lead?.sections || []),
+            ...(sectionsData?.remaining?.sections || []),
+          ];
+          for (const sec of sections) {
+            const title = (sec.title || "").toLowerCase();
+            const text = stripHtml(sec.text || "").slice(0, 600);
+            if (!text) continue;
+            if (
+              !side_effects &&
+              (title.includes("side effect") ||
+                title.includes("adverse") ||
+                title.includes("undesirable"))
+            )
+              side_effects = text;
+            if (
+              !wrong_use &&
+              (title.includes("contraindic") ||
+                title.includes("wrong use") ||
+                title.includes("when not") ||
+                title.includes("do not use"))
+            )
+              wrong_use = text;
+            if (
+              !warnings &&
+              (title.includes("warning") ||
+                title.includes("precaution") ||
+                title.includes("caution"))
+            )
+              warnings = text;
+            if (
+              !how_to_use &&
+              (title.includes("dosage") ||
+                title.includes("how to use") ||
+                title.includes("administration") ||
+                title.includes("dose") ||
+                title.includes("directions") ||
+                title.includes("usage"))
+            )
+              how_to_use = text;
+            if (
+              !drug_class &&
+              (title.includes("pharmacology") ||
+                title.includes("class") ||
+                title.includes("mechanism") ||
+                title.includes("action"))
+            )
+              drug_class = text.slice(0, 200);
+          }
+          // Second pass: search section text
+          for (const sec of sections) {
+            const text = stripHtml(sec.text || "");
+            if (!text) continue;
+            if (!side_effects) {
+              const idx = text
+                .toLowerCase()
+                .search(
+                  /side effect|adverse effect|adverse reaction|undesirable effect/,
+                );
+              if (idx !== -1)
+                side_effects = text.slice(
+                  Math.max(0, idx - 30),
+                  Math.max(0, idx - 30) + 500,
+                );
+            }
+            if (!how_to_use) {
+              const idx = text
+                .toLowerCase()
+                .search(
+                  /dosage|dose:|how to use|take \d|take one|administer|oral dose/,
+                );
+              if (idx !== -1)
+                how_to_use = text.slice(
+                  Math.max(0, idx - 30),
+                  Math.max(0, idx - 30) + 500,
+                );
+            }
+          }
+          // Fallback from extract
+          if (!side_effects && extract) {
+            const idx = extract
+              .toLowerCase()
+              .search(/side effect|adverse effect/);
+            if (idx !== -1)
+              side_effects = extract.slice(
+                Math.max(0, idx - 20),
+                Math.max(0, idx - 20) + 400,
+              );
+          }
+          if (!how_to_use && extract) {
+            const idx = extract
+              .toLowerCase()
+              .search(
+                /used to treat|used for|prescribed for|taken (orally|by mouth|as)/,
+              );
+            if (idx !== -1)
+              how_to_use = extract.slice(
+                Math.max(0, idx - 20),
+                Math.max(0, idx - 20) + 400,
+              );
+          }
+        } catch {
+          /* ignore section parse errors */
+        }
+      }
+
+      // Return if we got at least something useful
+      if (
+        used_for ||
+        side_effects ||
+        how_to_use ||
+        warnings ||
+        drug_class ||
+        wrong_use
+      )
+        return {
+          how_to_use,
+          used_for,
+          side_effects,
+          warnings,
+          drug_class,
+          wrong_use,
+        };
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  try {
+    // Try OpenFDA with full name, then first word
+    const fdaResult =
+      (await tryOpenFDA(name)) ||
+      (firstWord !== name ? await tryOpenFDA(firstWord) : null);
+    if (fdaResult) return fdaResult;
+
+    // Try Wikipedia with full name, then first two words, then first word
+    const wikiResult =
+      (await tryWikipedia(name)) ||
+      (firstTwo !== name ? await tryWikipedia(firstTwo) : null) ||
+      (firstWord !== firstTwo ? await tryWikipedia(firstWord) : null);
+    if (wikiResult) return wikiResult;
+
+    return empty;
   } catch {
-    return {
-      how_to_use: "",
-      used_for: "",
-      side_effects: "",
-      warnings: "",
-      drug_class: "",
-      wrong_use: "",
-    };
+    return empty;
   }
 }
 
@@ -1535,11 +2029,9 @@ function StatusBadge({
 // ------- ResultCard -------
 function ResultCard({
   result,
-  autoSpeak,
   voiceLang,
 }: {
   result: ScanResult;
-  autoSpeak?: boolean;
   voiceLang?: string;
 }) {
   const [showRaw, setShowRaw] = useState(false);
@@ -1549,25 +2041,12 @@ function ResultCard({
   const hasSpeechSupport =
     typeof window !== "undefined" && !!window.speechSynthesis;
 
-  const resultRef = useRef(result);
-  const autoSpeakRef = useRef(autoSpeak);
   const langRef = useRef(voiceLang || "en-US");
 
   // sync lang ref
   useEffect(() => {
     langRef.current = voiceLang || "en-US";
   }, [voiceLang]);
-
-  // Auto-speak once when the card first mounts
-  useEffect(() => {
-    if (!autoSpeakRef.current || !window.speechSynthesis) return;
-    const utterance = speakResult(resultRef.current, langRef.current);
-    if (utterance) {
-      setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-    }
-  }, []);
 
   // Cancel speech on unmount
   useEffect(() => {
@@ -1576,19 +2055,125 @@ function ResultCard({
     };
   }, []);
 
-  const handleVoice = () => {
+  const handleVoice = async () => {
     if (!hasSpeechSupport) return;
     if (isSpeaking) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
       return;
     }
-    const utterance = speakResult(result, langRef.current);
+    const currentLang = langRef.current;
+    const isoLang = VOICE_TO_ISO[currentLang] || "en";
+    let speakData = result;
+    if (isoLang !== "en") {
+      const [usedFor, howToUse, sideEffects, warnings, wrongUse] =
+        await Promise.all([
+          result.used_for
+            ? translateText(result.used_for, isoLang)
+            : Promise.resolve(""),
+          result.how_to_use
+            ? translateText(result.how_to_use, isoLang)
+            : Promise.resolve(""),
+          result.side_effects
+            ? translateText(result.side_effects, isoLang)
+            : Promise.resolve(""),
+          result.warnings
+            ? translateText(result.warnings, isoLang)
+            : Promise.resolve(""),
+          result.wrong_use
+            ? translateText(result.wrong_use, isoLang)
+            : Promise.resolve(""),
+        ]);
+      speakData = {
+        ...result,
+        used_for: usedFor,
+        how_to_use: howToUse,
+        side_effects: sideEffects,
+        warnings,
+        wrong_use: wrongUse,
+      };
+    }
+    const utterance = speakResult(speakData, currentLang);
     if (utterance) {
       setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = () => setIsSpeaking(false);
     }
+  };
+  // --- Voice Note State ---
+  const [voiceNoteBlob, setVoiceNoteBlob] = useState<Blob | null>(null);
+  const [voiceNoteUrl, setVoiceNoteUrl] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlayingNote, setIsPlayingNote] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Cleanup object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (voiceNoteUrl) URL.revokeObjectURL(voiceNoteUrl);
+      if (audioRef.current) audioRef.current.pause();
+    };
+  }, [voiceNoteUrl]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      mr.onstop = () => {
+        for (const t of stream.getTracks()) t.stop();
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        if (voiceNoteUrl) URL.revokeObjectURL(voiceNoteUrl);
+        const url = URL.createObjectURL(blob);
+        setVoiceNoteBlob(blob);
+        setVoiceNoteUrl(url);
+        setIsRecording(false);
+      };
+      mediaRecorderRef.current = mr;
+      mr.start();
+      setIsRecording(true);
+    } catch {
+      toast.error(
+        "Microphone permission denied. Please allow microphone access.",
+      );
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  const playVoiceNote = () => {
+    if (!voiceNoteUrl) return;
+    if (isPlayingNote) {
+      audioRef.current?.pause();
+      setIsPlayingNote(false);
+      return;
+    }
+    const audio = new Audio(voiceNoteUrl);
+    audioRef.current = audio;
+    audio.onended = () => setIsPlayingNote(false);
+    audio.onerror = () => setIsPlayingNote(false);
+    audio.play();
+    setIsPlayingNote(true);
+  };
+
+  const deleteVoiceNote = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (voiceNoteUrl) URL.revokeObjectURL(voiceNoteUrl);
+    setVoiceNoteBlob(null);
+    setVoiceNoteUrl(null);
+    setIsPlayingNote(false);
   };
 
   return (
@@ -1760,6 +2345,91 @@ function ResultCard({
           )}
         </div>
       )}
+      {/* Voice Note */}
+      <div className="mt-4 border-t border-border pt-3">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Mic className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {tpl.voiceNote}
+          </span>
+          {isRecording && (
+            <span className="flex items-center gap-1 ml-1">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-xs text-red-500 font-medium">
+                Recording...
+              </span>
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {!isRecording && !voiceNoteBlob && (
+            <button
+              type="button"
+              data-ocid="result.button"
+              onClick={startRecording}
+              title="Record voice note"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+            >
+              <Mic className="w-3.5 h-3.5" />
+              {tpl.record}
+            </button>
+          )}
+          {isRecording && (
+            <button
+              type="button"
+              data-ocid="result.button"
+              onClick={stopRecording}
+              title="Stop recording"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors border border-red-500/20"
+            >
+              <Square className="w-3.5 h-3.5" />
+              {tpl.stopRecording}
+            </button>
+          )}
+          {voiceNoteBlob && !isRecording && (
+            <>
+              <button
+                type="button"
+                data-ocid="result.button"
+                onClick={playVoiceNote}
+                title={isPlayingNote ? "Stop playback" : "Play voice note"}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                  isPlayingNote
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
+                }`}
+              >
+                {isPlayingNote ? (
+                  <Square className="w-3.5 h-3.5" />
+                ) : (
+                  <Play className="w-3.5 h-3.5" />
+                )}
+                {isPlayingNote ? tpl.stopPlay : tpl.playNote}
+              </button>
+              <button
+                type="button"
+                data-ocid="result.delete_button"
+                onClick={deleteVoiceNote}
+                title="Delete voice note"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors border border-destructive/20"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {tpl.deleteNote}
+              </button>
+              <button
+                type="button"
+                data-ocid="result.button"
+                onClick={startRecording}
+                title="Re-record voice note"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors border border-border"
+              >
+                <Mic className="w-3.5 h-3.5" />
+                {tpl.reRecord}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
     </motion.div>
   );
 }
@@ -1910,7 +2580,6 @@ export default function App() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
-  const [autoSpeak, setAutoSpeak] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>(loadHistory);
   const [loadingBackendHistory, setLoadingBackendHistory] = useState(false);
@@ -1986,7 +2655,6 @@ export default function App() {
       setSelectedFile(file);
       setPreviewUrl(url);
       setResult(null);
-      setAutoSpeak(false);
       setErrorMsg(null);
       setVoiceTranscript("");
     },
@@ -2017,7 +2685,6 @@ export default function App() {
     setAnalyzing(true);
     setErrorMsg(null);
     setResult(null);
-    setAutoSpeak(false);
 
     try {
       // Preprocess image: grayscale + contrast boost, then compress
@@ -2122,7 +2789,6 @@ export default function App() {
         wrong_use: translatedWrongUse,
       };
       setResult(resWithUsage);
-      setAutoSpeak(true);
 
       const item: HistoryItem = {
         id: crypto.randomUUID(),
@@ -2655,11 +3321,7 @@ export default function App() {
                 <h2 className="text-xl font-bold text-foreground mb-4">
                   {tpl.scanResults}
                 </h2>
-                <ResultCard
-                  result={result}
-                  autoSpeak={autoSpeak}
-                  voiceLang={voiceLang}
-                />
+                <ResultCard result={result} voiceLang={voiceLang} />
                 <div className="mt-8 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 p-6 flex flex-col items-center gap-3 text-center">
                   <p className="text-base font-semibold text-foreground">
                     {tpl.wantScanAnother}
